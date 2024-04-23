@@ -38,3 +38,8 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# output folders
+0_Data/
+1_Species_record_summaries/
+*.zip
