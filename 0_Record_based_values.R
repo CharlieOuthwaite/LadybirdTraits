@@ -112,7 +112,12 @@ lb_xy <- vect(lb_xy, geom =c("decimalLongitude.processed", "decimalLatitude.proc
 #plot(lb_xy) # take a look
 
 
-##### Country presence #####
+############################################################
+#                                                          #
+#                    Country presence                      #
+#                                                          #
+############################################################
+
 
 # This section determines entries for the following columns: Present_England, 
 # Present_Wales, Present_Scotland. 
@@ -162,7 +167,12 @@ for(i in 1:nrow(sp_tab)){
 write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 
-##### Number of 10km grid squares with records #####
+############################################################
+#                                                          #
+#        Number of 10km grid squares with records          #
+#                                                          #
+############################################################
+
 
 # This section counts the number of 10km grid squares that each species has
 # records in. GB grid squares only.
@@ -217,19 +227,55 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 
 
-##### Number of vicecounties #####
+############################################################
+#                                                          #
+#                 Number of vicecounties                   #
+#                                                          #
+############################################################
 
 # This section counts the number of vicecounties that each species has records in. 
+# shapefiles of the vicecounties are from the Biological Records Centre resources webpage.
 
-
+# load in the polygons
 vice <- vect(x = paste0(datadir, "vice-counties-master/3-mile/County_3mile_region.shp"))
+plot(vice)
 
-lb_dat$vicecounty <- 
-  # intersect points with polygons?
+# reproject the polygons to match the points
+vice <- project(x = vice, y = "+proj=longlat +datum=WGS84")
+
+# extract vice country info from the polygons
+lb_dat$vicecounty <- extract(vice, lb_xy)[, 3]
+
+# set up space in the table
+sp_tab$n_vicecounties <- NA
+
+# now for each species, count how many unique vicecounties the records are in
+for(i in 1:nrow(sp_tab)){
+  # i <- 1
+  # subset to each species 
+  sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
   
+  # determine number of 10km grid squares
+  n_vice <- length(unique(sp_recs$vicecounty))
   
+  # add results into table
+  sp_tab[i, "n_vicecounties"] <- n_vice
   
-  ##### Month of first, last and peak records #####
+}
+
+
+# save the table
+write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
+
+
+
+  
+############################################################
+#                                                          #
+#          Month of first, last and peak records           #
+#                                                          #
+############################################################
+
 
 # This section uses the records to determine when the first, last and peak of 
 # observations of the larvae (where possible) and the adults are from.
