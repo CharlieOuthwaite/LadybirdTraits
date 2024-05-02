@@ -42,4 +42,5 @@ vignettes/*.pdf
 # output folders
 0_Data/
 1_Species_record_summaries/
+2_Species_temp_index/
 *.zip
