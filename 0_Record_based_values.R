@@ -137,6 +137,28 @@ sp_tab <- merge(sp_tab, vals)
 
 ##%######################################################%##
 #                                                          #
+####                 Year of first record               ####
+#                                                          #
+##%######################################################%##
+
+
+
+yr_tab <- lb_dat %>% group_by(scientificName.processed)  %>% 
+  summarise(yr_first = min(year.processed))
+
+# change column names
+names(yr_tab) <- c("species", "yr_first")
+
+# merge sp_tab with vals
+sp_tab <- merge(sp_tab, yr_tab)
+
+# save the table
+write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
+
+
+
+##%######################################################%##
+#                                                          #
 ####             Year of most recent record             ####
 #                                                          #
 ##%######################################################%##
@@ -340,7 +362,7 @@ sp_tab$Adult_first <- NA
 sp_tab$Adult_last <- NA
 sp_tab$Adult_peak1 <- NA
 sp_tab$Adult_peak2 <- NA
-
+sp_tab$Max_month <- NA
 
 for(i in 1:nrow(sp_tab)){
   # i <- 1
@@ -357,9 +379,31 @@ for(i in 1:nrow(sp_tab)){
   
   # determine peaks
   
+  # create empty dataframe to ensure all months have data even if no records
+  months <- data.frame(month.processed  = 1:12)
+  
   # frequency table of months
   months_freq <- sp_recs %>% 
     group_by(month.processed) %>% tally()
+  
+  # ensure all months have data by merging above with empty data frame
+  months_freq <- merge(months, months_freq, by = "month.processed", all.x = T)
+  
+  # replace NAs with 0s
+  months_freq[is.na(months_freq$n), "n"] <- 0
+  
+  # If there are fewer than 20 records for the species. Set the month with the 
+  # max records and the peak months to NA.
+  if(nrow(sp_recs) < 20){
+    
+    sp_tab[sp_tab$species == sp_tab[i, 1], "Max_month"] <- NA
+    sp_tab[sp_tab$species == sp_tab[i, 1], "Adult_peak1"] <- NA
+    sp_tab[sp_tab$species == sp_tab[i, 1], "Adult_peak2"] <- NA
+  
+  }else{
+  
+  # month with the most records
+  sp_tab[sp_tab$species == sp_tab[i, 1], "Max_month"] <- months_freq[months_freq$n == max(months_freq$n, na.rm = T), "month.processed"]
   
     # get the first month with the most records
   sp_tab[sp_tab$species == sp_tab[i, 1], "Adult_peak1"] <- grep(TRUE, peaks(months_freq$n, span = 5))[1]
@@ -367,7 +411,7 @@ for(i in 1:nrow(sp_tab)){
   # get the second month with the most records
   sp_tab[sp_tab$species == sp_tab[i, 1], "Adult_peak2"] <- grep(TRUE, peaks(months_freq$n, span = 5))[2]
   
-}
+}}
 
 
 # save the table
@@ -375,7 +419,7 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 
 
-# create histograms for each species to refer to
+# create histograms for each species to refer to for checking peaks
 
 for(i in 1:nrow(sp_tab)){
   # i <- 1
@@ -390,11 +434,60 @@ for(i in 1:nrow(sp_tab)){
              fill = "lightblue") + 
     #scale_x_continuous(limits = c(1, 12)) + 
     theme_light() + 
-    ggtitle(paste0("Frequency of records by month - ", sp_tab[i, 1]))
+    ggtitle(paste0("Frequency of records by month - ", sp_tab[i, 1])) + 
+    xlab("Month - January to December") +
+    ylab("Count")
   
 ggsave(paste0(outdir, "Histograms/", sp_tab[i, 1], ".png"))
 
 }
+
+
+# 
+# ### testing peak options
+# 
+# sp_tab_test <- as.data.frame(sp_tab[, 1])
+# sp_tab_test$Adult_peak1_5 <- NA
+# sp_tab_test$Adult_peak2_5 <- NA
+# sp_tab_test$Adult_peak1_3 <- NA
+# sp_tab_test$Adult_peak2_3 <- NA
+# 
+# names(sp_tab_test)[1] <- "species"
+# 
+# 
+# for(i in 1:nrow(sp_tab_test)){
+#   # i <- 1
+# 
+#   # determine peaks
+#   
+#   # subset to each species 
+#   sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
+#   
+#   # create empty dataframe to ensure all months have data even if no records
+#   months <- data.frame(month.processed  = 1:12)
+#   
+#   # frequency table of months
+#   months_freq <- sp_recs %>% 
+#     group_by(month.processed) %>% tally()
+#   
+#   # ensure all months have data by merging above with empty data frame
+#   months_freq <- merge(months, months_freq, by = "month.processed", all.x = T)
+#   
+#   # get the first month with the most records
+#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak1_5"] <- grep(TRUE, peaks(months_freq$n, span = 5))[1]
+#   
+#   # get the second month with the most records
+#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak2_5"] <- grep(TRUE, peaks(months_freq$n, span = 5))[2]
+#   
+#   # get the first month with the most records
+#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak1_3"] <- grep(TRUE, peaks(months_freq$n, span = 3))[1]
+#   
+#   # get the second month with the most records
+#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak2_3"] <- grep(TRUE, peaks(months_freq$n, span = 3))[2]
+#   
+# }
+# 
+
 
 
 
