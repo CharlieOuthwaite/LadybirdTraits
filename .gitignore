@@ -44,5 +44,5 @@ vignettes/*.pdf
 1_Species_record_summaries/
 2_Organise_GBIF_Data/
 3_Species_temp_index/
-4_Figures
+4_Figures/
 *.zip
