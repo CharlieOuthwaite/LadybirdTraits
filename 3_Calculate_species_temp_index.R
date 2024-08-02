@@ -17,11 +17,10 @@ rm(list = ls())
 # load libraries
 library(terra)
 
-
 # set directories
 datadir <- "0_Data/"
 lbdir <- "1_Species_record_summaries/"
-outdir <- "2_Species_temp_index/"
+outdir <- "3_Species_temp_index/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # read in record based values table for peak months 
@@ -35,6 +34,8 @@ sp_tab <- read.csv(paste0(lbdir, "Species_record_Summaries.csv"))
 #                                                          #
 ##%######################################################%##
 
+# Here we calculated both the mean- and peak-based STIs for each species 
+# using the records from GB. 
 
 # load in GB ladybird data
 lb_dat <- read.csv(paste0(lbdir, "GB_ladybird_occurrences_processed.csv"))
@@ -68,10 +69,15 @@ sp_tab$GB_STI_yr <- NA
 # sp <- species[1]
 for (sp in species){
   
+  # subset the data to the species of interest
   sp_dat <- lb_dat[lb_dat$scientificName.processed == sp, ]
   
   # create point locations 
   sp_xy <- vect(sp_dat, geom = c("decimalLongitude.processed", "decimalLatitude.processed"))
+  
+  # check 
+  # plot(ann_mean_temp)
+  # plot(sp_xy, add = T)
   
   # extract values from the annual mean temperature map
   # take the mean to get the species level STI
@@ -82,37 +88,41 @@ for (sp in species){
   
 }
 
+
 # save the table
 write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.names = F)
 
 
-#### Second, STI determined using just peak month ####
 
+
+#### Second, STI determined using just the max month ####
 
 # create space to save results in sp_tab
 sp_tab$GB_STI_peak <- NA
 
 
-# sp <- species[17]
+# sp <- species[27]
 for(sp in species){
+  
+  # for testing
+  #print(sp)
   
   sp_dat <- lb_dat[lb_dat$scientificName.processed == sp, ]
   
   # create point locations 
   sp_xy <- vect(sp_dat, geom = c("decimalLongitude.processed", "decimalLatitude.processed"))
   
-  # use peak month for adults determined from the records
-  peak1 <- sp_tab$Adult_peak1[sp_tab$species == sp]
-  peak2 <- sp_tab$Adult_peak2[sp_tab$species == sp]
+  # use max month for adults determined from the records
+  peak <- sp_tab$Max_month[sp_tab$species == sp]
+
+  # one species don't have enough records for peaks
+  if (is.na(peak) == T){  sp_tab[sp_tab$species == sp, "GB_STI_peak"] <- NA 
   
-  # one species doesn't have enough records for peaks
-  if (is.na(peak1) == T){  sp_tab[sp_tab$species == sp, "GB_STI_peak"] <- NA }
+  }else{
   
-  # some species only have one peak
-  if (is.na(peak2) == T & is.na(peak1) == F) {
-    
+
    # load in the raster for the peak month
-   temp_peak <- rast(temp_files[peak1])
+   temp_peak <- rast(temp_files[peak])
    
    # extract values from the temp map for the peak month
    # take the mean to get the species level STI
@@ -120,25 +130,6 @@ for(sp in species){
    
    # add result into the sp_tab
    sp_tab[sp_tab$species == sp, "GB_STI_peak"] <- sp_STI_peak
-    
-  }
-  
-  # some species have two peaks so use the two peak months
-  
-  if(is.na(peak2) == F){
-    
-    # load in the raster for the peak month
-    temp_peak <- rast(temp_files[c(peak1, peak2)])
-    
-    # average the two months
-    temp_peak <- mean(temp_peak)
-    
-    # extract values from the temp map for the peak month
-    # take the mean to get the species level STI
-    sp_STI_peak <- mean(extract(temp_peak, sp_xy, ID = F)[, 1], na.rm = T)
-    
-    # add result into the sp_tab
-    sp_tab[sp_tab$species == sp, "GB_STI_peak"] <- sp_STI_peak
     
   }
   
@@ -162,6 +153,9 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.nam
 ####                2. Europe-based STI                 ####
 #                                                          #
 ##%######################################################%##
+
+# Here we calculated both the mean- and peak-based STIs for each species 
+# using the records from across Europe. 
 
 #sp_tab <- read.csv(paste0(outdir, "Species_record_Summaries_incSTI.csv"))
 
@@ -221,7 +215,7 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.nam
 sp_tab$Europe_STI_peak <- NA
 
 
-# sp <- species[1]
+# sp <- species[31]
 for(sp in species){
   
   sp_dat <- d_EU[d_EU$species == sp, ]
@@ -229,18 +223,16 @@ for(sp in species){
   # create point locations 
   sp_xy <- vect(sp_dat, geom = c("decimalLongitude", "decimalLatitude"))
   
-  # use peak month for adults determined from the records
-  peak1 <- sp_tab$Adult_peak1[sp_tab$species == sp]
-  peak2 <- sp_tab$Adult_peak2[sp_tab$species == sp]
-  
+  # use max month month for adults determined from the records
+  peak <- sp_tab$Max_month[sp_tab$species == sp]
+
   # one species doesn't have enough records for peaks
-  if (is.na(peak1) == T){  sp_tab[sp_tab$species == sp, "Europe_STI_peak"] <- NA }
+  if (is.na(peak) == T){  sp_tab[sp_tab$species == sp, "Europe_STI_peak"] <- NA 
   
-  # some species only have one peak
-  if (is.na(peak2) == T & is.na(peak1) == F) {
+  } else {
     
     # load in the raster for the peak month
-    temp_peak <- rast(temp_files[peak1])
+    temp_peak <- rast(temp_files[peak])
     
     # extract values from the temp map for the peak month
     # take the mean to get the species level STI
@@ -251,24 +243,6 @@ for(sp in species){
     
   }
   
-  # some species have two peaks so use the two peak months
-  
-  if(is.na(peak2) == F){
-    
-    # load in the raster for the peak month
-    temp_peak <- rast(temp_files[c(peak1, peak2)])
-    
-    # average the two months
-    temp_peak <- mean(temp_peak)
-    
-    # extract values from the temp map for the peak month
-    # take the mean to get the species level STI
-    sp_STI_peak <- mean(extract(temp_peak, sp_xy, ID = F)[, 1], na.rm = T)
-    
-    # add result into the sp_tab
-    sp_tab[sp_tab$species == sp, "Europe_STI_peak"] <- sp_STI_peak
-    
-  }
   
 }
 
@@ -278,14 +252,5 @@ sp_tab$Europe_STI_peak <- round(sp_tab$Europe_STI_peak, digits = 2)
 
 # save the table
 write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.names = F)
-
-
-
-
-
-
-
-
-
 
 
