@@ -19,7 +19,7 @@ library(CoordinateCleaner)
 
 # set directories
 datadir <- "0_Data/"
-plotdir <- "GBIF_plots/"
+plotdir <- "2_Organise_GBIF_Data/GBIF_plots/"
 if(!dir.exists(plotdir)) dir.create(plotdir)
 
 # GBIF details #### REMOVE THESE BEFORE SHARING ####
@@ -28,9 +28,7 @@ pwd <- "Th3LostC!ty" # your gbif.org password
 email <- "charlotte.outhwaite.14@ucl.ac.uk" # your email 
 
 # read in species names list
-sp_tab <- read.csv("2_Species_temp_index/Species_record_Summaries_incSTI.csv")
-
-
+sp_tab <- read.csv(paste0("1_Species_record_summaries/Species_record_Summaries.csv"))
 
 # match the names with GBIF to get the taxon keys
 gbif_taxon_keys <- 
@@ -53,15 +51,15 @@ occ_download(
 )
 
 #Check status with
-occ_download_wait('0046108-240506114902167') # value from print to console.
+occ_download_wait('0045574-240626123714530') # value from print to console.
 
 # import the data
-d <- occ_download_get('0046108-240506114902167') %>%
+d <- occ_download_get('0045574-240626123714530') %>%
   occ_download_import()
-# 1584603 records
+# 1666130 records
 
 # get the citation for the dataset
-gbif_citation('0046108-240506114902167')
+gbif_citation('0045574-240626123714530')
 # GBIF Occurrence Download https://doi.org/10.15468/dl.bntf47 Accessed from R 
 # via rgbif (https://github.com/ropensci/rgbif) on 2024-05-29
 
@@ -80,12 +78,12 @@ d_sub <- d %>%
   cc_sea() %>% # remove from ocean 
   distinct(decimalLongitude,decimalLatitude,speciesKey,datasetKey, .keep_all = TRUE) # remove location duplicates
 
-# Removed 50362 records.
-# 755191 rows remaining
+# Removed 52791 records.
+# 792055 rows remaining
 
 # check number of species
 table(d_sub$species)
-length(unique(d_sub$species)) # 53 species
+length(unique(d_sub$species)) # 48 species
 
 # Some name inconsistencies
 d_sub[d_sub$species == "Calvia quatuordecimguttata", "species"] <- "Calvia quattuordecimguttata" # missing t
