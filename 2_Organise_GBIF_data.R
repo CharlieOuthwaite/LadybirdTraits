@@ -87,7 +87,7 @@ length(unique(d_sub$species)) # 48 species
 
 # correcting some name inconsistencies
 d_sub[d_sub$species == "Calvia quatuordecimguttata", "species"] <- "Calvia quattuordecimguttata" # missing t
-d_sub[d_sub$species == "Propylaea quattuordecimpunctata", "species"] <- "Propylea quattuordecimpunctata" # spelling
+d_sub[d_sub$species == "Propylaea quatuordecimpunctata", "species"] <- "Propylea quattuordecimpunctata" # spelling
 d_sub[d_sub$species == "Brumus quadripustulatus", "species"] <- "Exochomus quadripustulatus" # synonym
 d_sub[d_sub$species == "Parexochomus nigromaculatus", "species"] <- "Exochomus nigromaculatus" # synonym
 d_sub[d_sub$species == "Subcoccinella vigintiquatuorpunctata", "species"] <- "Subcoccinella vigintiquattuorpunctata" # missing t
@@ -98,7 +98,7 @@ d_sub[d_sub$species == "Subcoccinella vigintiquatuorpunctata", "species"] <- "Su
 # load world map
 wrld <- map_data("world")
 
-# sp <- sp_tab$species[52]
+# sp <- sp_tab$species[31]
 for(sp in sp_tab$species){
   
   # select data for the species
@@ -133,7 +133,7 @@ EU <- c("BE", "BG", "CZ", "DK", "DE", "EE", "IE", "EL", "ES", "FR", "HR", "IT",
 
 # subset records, keep those for Europe only (not counting native range for the non-natives)
 d_EU <- d_sub[d_sub$countryCode %in% EU, ]
-# 602277 records
+# 631289 records
 
 
 # plot points to check from Europe only, map for each species
