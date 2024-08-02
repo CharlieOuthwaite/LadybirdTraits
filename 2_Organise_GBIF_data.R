@@ -85,7 +85,7 @@ d_sub <- d %>%
 table(d_sub$species)
 length(unique(d_sub$species)) # 48 species
 
-# Some name inconsistencies
+# correcting some name inconsistencies
 d_sub[d_sub$species == "Calvia quatuordecimguttata", "species"] <- "Calvia quattuordecimguttata" # missing t
 d_sub[d_sub$species == "Propylaea quattuordecimpunctata", "species"] <- "Propylea quattuordecimpunctata" # spelling
 d_sub[d_sub$species == "Brumus quadripustulatus", "species"] <- "Exochomus quadripustulatus" # synonym
