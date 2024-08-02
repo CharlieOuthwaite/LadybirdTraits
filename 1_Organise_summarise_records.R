@@ -33,6 +33,7 @@ irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03
 summary(names(ladybird_survey) == names(irecord_ladybirds)) # column names the same
 lb_dat <- rbind(ladybird_survey, irecord_ladybirds)
 
+# look at column names
 names(lb_dat)
 
 # subset to desired columns
@@ -41,17 +42,17 @@ lb_dat <- lb_dat[, c(17, 18, 30, 38, 44, 45, 66, 71:73, 87, 95, 111, 129, 130, 1
 # a few summaries of the remaining
 nrow(lb_dat) # 278964 observations
 table(lb_dat$basisOfRecord.processed) # all human observation
-table(lb_dat$lifeStage) # a lot of options here, will need processing
+table(lb_dat$lifeStage) # Mostly adult records, some larva, very few egg/pupa/other
 table(lb_dat$occurrenceStatus.processed) # all present
 range(as.Date(lb_dat$eventDate), na.rm = T) #"1834-02-07" "2024-02-27"
 range(lb_dat$year.processed, na.rm = T) # 1600 2024
-range(lb_dat$eventDate)
+range(lb_dat$eventDate[!lb_dat$eventDate == ""]) # "/1890" "2024-02-27"
 table(lb_dat$country.processed)
 #                United Kingdom 
 #           1135         277829 
 summary(is.na(lb_dat$coordinatePrecision)) # all NAs
 length(unique(lb_dat$gridReference)) # 51905 unique grid refs
-length(unique(lb_dat$scientificName.processed)) 66
+length(unique(lb_dat$scientificName.processed)) # 66
 table(lb_dat$taxonRank.processed)
 # family              form             genus           species species aggregate 
 #    146              7110               153            271260               295 
@@ -59,6 +60,8 @@ table(lb_dat$taxonRank.processed)
 table(lb_dat$stateProvince.processed)
 
 ### subsetting the data ###
+#               England      Isle of Man Northern Ireland         Scotland            Wales 
+# 1135           254913             1389             1265            12033             8229
 
 # Select only those to the species level
 lb_dat <- lb_dat[lb_dat$taxonRank.processed == "species", ] # 271260
@@ -68,17 +71,16 @@ length(unique(lb_dat$scientificName.processed)) # 54
 sp_names <- unique(lb_dat$scientificName.processed)
 sp_names[order(sp_names)]
 
-# seem to have some additional species in the dataset
+# seem to have some additional species here than in the trait in the dataset
 
 # "Cryptolaemus montrouzieri"  # 7 records
 # "Exochomus nigromaculatus"  # 3 records
 # "Oenopia conglobata" # 3 records
-# "Rhyzobius forestieri" # 216 records
 # "Rodolia cardinalis" # 7 records
 # "Scymnus rubromaculatus" # 9 records
 # "Vibidia duodecimguttata" # 2 records
 
-# separate names in case species removed later
+# separate names of additional species to subset later
 add_sp <- c("Cryptolaemus montrouzieri", "Exochomus nigromaculatus", "Oenopia conglobata",
             "Rodolia cardinalis", "Scymnus rubromaculatus","Vibidia duodecimguttata")
 
@@ -100,6 +102,8 @@ lb_dat <- lb_dat[!lb_dat$scientificName.processed %in% add_sp, ] ## 259257
 # save the organised dataset
 write.csv(lb_dat, paste0(outdir, "/GB_ladybird_occurrences_processed.csv"))
 
+
+
 ############################################################
 #                                                          #
 #              Summarising records by species              #
@@ -110,11 +114,10 @@ write.csv(lb_dat, paste0(outdir, "/GB_ladybird_occurrences_processed.csv"))
 # trait database.
 
 # create a table with a row per species to save required information
-sp_tab <- data.frame(species = sort(unique(lb_dat$scientificName.processed))) # 53 species
+sp_tab <- data.frame(species = sort(unique(lb_dat$scientificName.processed))) # 48 species
 #sp_tab <- read.csv(paste0(outdir, "Species_record_Summaries.csv"))
 
 #### Convert lat/lons to spatial points to use for data extraction ####
-
 lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
 #plot(lb_xy) # take a look
 
@@ -125,6 +128,8 @@ lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.pro
 ####           Number of records per species            ####
 #                                                          #
 ##%######################################################%##
+
+# How many records are in the dataset for each species?
 
 # count number of records per species
 vals <- as.data.frame(table(lb_dat$scientificName.processed))
@@ -143,8 +148,9 @@ sp_tab <- merge(sp_tab, vals)
 #                                                          #
 ##%######################################################%##
 
+# What is the year of the first record for each species?
 
-
+# get the minimum year processed, grouping by species
 yr_tab <- lb_dat %>% group_by(scientificName.processed)  %>% 
   summarise(yr_first = min(year.processed))
 
@@ -165,8 +171,9 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 #                                                          #
 ##%######################################################%##
 
+# What is the year of the most recent record for each species?
 
-
+# get the max year processed, grouing by species
 yr_tab <- lb_dat %>% group_by(scientificName.processed)  %>% 
   summarise(yr_recent = max(year.processed))
 
@@ -186,10 +193,10 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 #                                                          #
 ############################################################
 
+# This section determines presence and the number of records in England, 
+# Wales and Scotland. 
 
-# This section determines entries for the following columns: Present_England, 
-# Present_Wales, Present_Scotland. 
-
+# create empty spaces
 sp_tab$nrecs_England <- NA
 sp_tab$Present_England <- NA
 
@@ -199,8 +206,10 @@ sp_tab$Present_Wales <- NA
 sp_tab$nrecs_Scotland <- NA
 sp_tab$Present_Scotland <- NA
 
+# for each species, determine the number of records in each country
 for(i in 1:nrow(sp_tab)){
   # i <- 1
+  # subset to the records for the species of interest
   sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
   
   if("England" %in% sp_recs$stateProvince.processed) {
@@ -255,7 +264,7 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 # This section counts the number of 10km grid squares that each species has
 # records in. GB grid squares only.
-# This uses layers of the BNG, these were downloaded from here:
+# This uses layers of the British National Grid, these were downloaded from here:
 # https://github.com/OrdnanceSurvey/OS-British-National-Grids
 
 
@@ -277,10 +286,10 @@ BNG <- st_read(paste0(datadir, "OS-British-National-Grids-main/os_bng_grids.gpkg
 # convert to a terra vector object
 BNG <- vect(BNG)
 
-# reproject so the grid is in the same format as the points (tried the other way around and got it didn't work)
+# reproject so the grid is in the same format as the points (tried the other way around and it didn't work)
 BNG <- project(x = BNG, y = "+proj=longlat +datum=WGS84")
 
-# extract the 10km  grid refs for the ladybird data
+# extract the 10km grid refs for the ladybird data
 lb_dat$GridRef10km <- extract(BNG, y = lb_xy)[,2]
 
 # set up space in the table
@@ -308,12 +317,13 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 ############################################################
 #                                                          #
-#                 Number of vicecounties                   #
+#                 Number of vice-counties                  #
 #                                                          #
 ############################################################
 
-# This section counts the number of vicecounties that each species has records in. 
-# shapefiles of the vicecounties are from the Biological Records Centre resources webpage.
+# This section counts the number of vice-counties that each species has records in. 
+# shapefiles of the vice-counties are from the Biological Records Centre resources webpage.
+# https://www.brc.ac.uk/maps
 
 # load in the polygons
 vice <- vect(x = paste0(datadir, "vice-counties-master/3-mile/County_3mile_region.shp"))
@@ -328,7 +338,7 @@ lb_dat$vicecounty <- extract(vice, lb_xy)[, 3]
 # set up space in the table
 sp_tab$n_vicecounties <- NA
 
-# now for each species, count how many unique vicecounties the records are in
+# now for each species, count how many unique vice-counties the records are in
 for(i in 1:nrow(sp_tab)){
   # i <- 1
   # subset to each species 
@@ -357,8 +367,9 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 
 # This section uses the records to determine when the first, last and peak of 
-# observations are. We assume that most records are of adults and so results
-# here will reflect the adult peaks. Larvae peaks have been determined by PB. 
+# observations are. Since most records are of adults we assume here that
+# these will reflect the adult peaks. Larvae peaks have been determined by PB.
+# We also get the highest peak (max_month) for use in calculating the GB STI.
 
 sp_tab$Adult_first <- NA
 sp_tab$Adult_last <- NA
@@ -421,7 +432,7 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 
 
-# create histograms for each species to refer to for checking peaks
+### create histograms for each species to refer to for checking the peaks ###
 
 for(i in 1:nrow(sp_tab)){
   # i <- 1
@@ -443,53 +454,6 @@ for(i in 1:nrow(sp_tab)){
 ggsave(paste0(outdir, "Histograms/", sp_tab[i, 1], ".png"))
 
 }
-
-
-# 
-# ### testing peak options
-# 
-# sp_tab_test <- as.data.frame(sp_tab[, 1])
-# sp_tab_test$Adult_peak1_5 <- NA
-# sp_tab_test$Adult_peak2_5 <- NA
-# sp_tab_test$Adult_peak1_3 <- NA
-# sp_tab_test$Adult_peak2_3 <- NA
-# 
-# names(sp_tab_test)[1] <- "species"
-# 
-# 
-# for(i in 1:nrow(sp_tab_test)){
-#   # i <- 1
-# 
-#   # determine peaks
-#   
-#   # subset to each species 
-#   sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
-#   
-#   # create empty dataframe to ensure all months have data even if no records
-#   months <- data.frame(month.processed  = 1:12)
-#   
-#   # frequency table of months
-#   months_freq <- sp_recs %>% 
-#     group_by(month.processed) %>% tally()
-#   
-#   # ensure all months have data by merging above with empty data frame
-#   months_freq <- merge(months, months_freq, by = "month.processed", all.x = T)
-#   
-#   # get the first month with the most records
-#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak1_5"] <- grep(TRUE, peaks(months_freq$n, span = 5))[1]
-#   
-#   # get the second month with the most records
-#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak2_5"] <- grep(TRUE, peaks(months_freq$n, span = 5))[2]
-#   
-#   # get the first month with the most records
-#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak1_3"] <- grep(TRUE, peaks(months_freq$n, span = 3))[1]
-#   
-#   # get the second month with the most records
-#   sp_tab_test[sp_tab_test$species == sp_tab[i, 1], "Adult_peak2_3"] <- grep(TRUE, peaks(months_freq$n, span = 3))[2]
-#   
-# }
-# 
-
 
 
 
