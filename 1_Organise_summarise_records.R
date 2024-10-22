@@ -19,10 +19,13 @@ library(sf)
 library(dplyr)
 library(splus2R)
 library(ggplot2)
+library(rnaturalearth)
+library(tidyterra)
+
 
 # set directories
 datadir <- "0_Data/"
-outdir <- "1_Species_record_summaries/"
+outdir <- "1_Species_record_summaries/UK"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the data from the NBN
@@ -60,8 +63,23 @@ table(lb_dat$taxonRank.processed)
 table(lb_dat$stateProvince.processed)
 
 ### subsetting the data ###
-#               England      Isle of Man Northern Ireland         Scotland            Wales 
-# 1135           254913             1389             1265            12033             8229
+#               England      Isle of Man Northern Ireland   Scotland   Wales 
+# 1135           254913             1389             1265   12033      8229
+
+
+#### Figure of number of records over time ####
+
+ggplot(data = lb_dat[lb_dat$year.processed >= 1970 & lb_dat$year.processed <= 2023, ]) + 
+  geom_bar(aes(x = year.processed), fill = c("#8B2323")) + 
+  xlab("Year") +
+  ylab("Number of records") + 
+  theme_bw() +
+  theme(text = element_text(size = 10))
+
+# save
+ggsave(filename = paste0(outdir, "/Fig1_nrecords_year.pdf"), 
+       dpi = 250, width = 4, height = 3, units = "in")
+
 
 # Select only those to the species level
 lb_dat <- lb_dat[lb_dat$taxonRank.processed == "species", ] # 271260
@@ -71,7 +89,8 @@ length(unique(lb_dat$scientificName.processed)) # 54
 sp_names <- unique(lb_dat$scientificName.processed)
 sp_names[order(sp_names)]
 
-# seem to have some additional species here than in the trait in the dataset
+# seem to have some additional species here than in the trait dataset
+table(lb_dat$scientificName.processed)
 
 # "Cryptolaemus montrouzieri"  # 7 records
 # "Exochomus nigromaculatus"  # 3 records
@@ -94,13 +113,58 @@ hist(lb_dat$year.processed)
 lb_dat <- lb_dat[lb_dat$year.processed >= 1970, ] # 262732
 
 # Select records for Great Britain only
-lb_dat <- lb_dat[lb_dat$stateProvince.processed %in% c("England", "Scotland", "Wales"), ] # 259281
+lb_dat <- lb_dat[lb_dat$stateProvince.processed %in% c("England", "Scotland", "Wales", "Northern Ireland"), ] # 260396
 
 # drop species that are not included in the database
-lb_dat <- lb_dat[!lb_dat$scientificName.processed %in% add_sp, ] ## 259257 
+lb_dat <- lb_dat[!lb_dat$scientificName.processed %in% add_sp, ] ## 259257 (GB), 260396 UK excl IoM.
+
+
+#### Assess location of points, just use those that fall within country polygons
+
+#### Convert lat/lons to spatial points to use for data extraction ####
+lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
+#plot(lb_xy) # take a look
+
+# get world map
+world <- ne_countries(scale = "medium", returnclass = "sf")
+
+# subset to the UK
+UK <- world[which(world$geounit == "United Kingdom"),]
+
+# match crs
+crs(lb_xy) <- crs(world)
+
+# take a look at the spatial spread of points
+ggplot() +
+  geom_sf(data = UK, fill = NA, col = "black") +
+  geom_spatvector(data = lb_xy)
+
+# Just take those points that fall within the country polygons
+# convert to terra object
+UK <- vect(UK)
+
+# extract information for those points from the polygon layer
+pnt_info <- extract(x = UK, y = lb_xy)
+
+# remove those that have NA within the name field, so outside polygons
+pnt_info <- pnt_info[!is.na(pnt_info$name_en), ]
+
+# check the points subset
+ggplot() +
+  geom_sf(data = UK, fill = NA, col = "black") +
+  geom_spatvector(data = lb_xy[pnt_info$id.y])
+
+
+# subset data to the points within country polygons only
+lb_dat <- lb_dat[pnt_info$id.y, ] # 256571 rows
+
+# recreate subset of point locations for later summaries
+lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
+#plot(lb_xy) # take a look
+
 
 # save the organised dataset
-write.csv(lb_dat, paste0(outdir, "/GB_ladybird_occurrences_processed.csv"))
+write.csv(lb_dat, paste0(outdir, "/GB_ladybird_occurrences_processed_UK.csv"))
 
 
 
@@ -116,10 +180,6 @@ write.csv(lb_dat, paste0(outdir, "/GB_ladybird_occurrences_processed.csv"))
 # create a table with a row per species to save required information
 sp_tab <- data.frame(species = sort(unique(lb_dat$scientificName.processed))) # 48 species
 #sp_tab <- read.csv(paste0(outdir, "Species_record_Summaries.csv"))
-
-#### Convert lat/lons to spatial points to use for data extraction ####
-lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
-#plot(lb_xy) # take a look
 
 
 
