@@ -25,7 +25,7 @@ library(tidyterra)
 
 # set directories
 datadir <- "0_Data/"
-outdir <- "1_Species_record_summaries/UK"
+outdir <- "1_Species_record_summaries/UK/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the data from the NBN
@@ -429,37 +429,11 @@ lb_dat$vicecounty[!lb_dat$stateProvince.processed == "Northern Ireland"] <- extr
 lb_dat$vicecounty[lb_dat$stateProvince.processed == "Northern Ireland"] <- extract(vice_NI, lb_xy_NI)[, 4]
 
 
-# extract vice country info from the polygons
-lb_dat$vicecounty2[!lb_dat$stateProvince.processed == "Northern Ireland"] <- vice_GB[nearest(lb_xy_GB, vice_GB, centroids = F)[, 4]]$VCNAME
-lb_dat$vicecounty2[lb_dat$stateProvince.processed == "Northern Ireland"] <- nearest(vice_NI, lb_xy_NI)[, 4]
-
-
-# set up space in the table
-sp_tab$n_vicecounties <- NA
-
-# now for each species, count how many unique vice-counties the records are in
-for(i in 1:nrow(sp_tab)){
-  # i <- 1
-  # subset to each species 
-  sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
-  
-  # determine number of 10km grid squares
-  # some a few records have NAs where the point is slightly outside polygons
-  n_vice <- length(na.omit(unique(sp_recs$vicecounty)))
-  
-  # add results into table
-  sp_tab[i, "n_vicecounties"] <- n_vice
-  
-}
-
-
-# now for each species, count how many unique 10km grid refs have records
-sp_tab$n_10k <- lb_dat %>%
+# now for each species, count how many unique vice counties
+sp_tab$n_vicecounties <- lb_dat %>%
   group_by(scientificName.processed) %>% # group by species name
-  summarise(n_10k = length(unique(GridRef10km))) %>% # summarise the number of unique grid refs
-  pull(n_10k) # select just the one column to add to other table
-
-
+  summarise(n_vicecounties = length(na.omit(unique(vicecounty)))) %>% # summarise the number of unique viecounties
+  pull(n_vicecounties) # select just the one column to add to other table
 
 
 # save the table
@@ -563,7 +537,6 @@ for(i in 1:nrow(sp_tab)){
 ggsave(paste0(outdir, "Histograms/", sp_tab[i, 1], ".png"))
 
 }
-
 
 
 
