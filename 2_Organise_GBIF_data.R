@@ -72,14 +72,14 @@ d_sub <- d %>%
   filter(!coordinateUncertaintyInMeters %in% c(301,3036,999,9999)) %>% 
   filter(!decimalLatitude == 0 | !decimalLongitude == 0) %>%
   filter(!is.na(month)) %>% # remove those where month of the record is unknown
-  cc_cen(buffer = 2000) %>% # remove country centroids within 2km
-  #cc_cap(buffer = 2000) %>% # remove capitals centroids within 2km
-  cc_inst(buffer = 2000) %>% # remove zoo and herbaria within 2km 
-  cc_sea() %>% # remove from ocean 
+  cc_cen(buffer = 2000, lon = "decimalLongitude", lat = "decimalLatitude") %>% # remove country centroids within 2km
+  cc_cap(buffer = 2000, lon = "decimalLongitude", lat = "decimalLatitude") %>% # remove capitals centroids within 2km
+  cc_inst(buffer = 2000, lon = "decimalLongitude", lat = "decimalLatitude") %>% # remove zoo and herbaria within 2km 
+  cc_sea(lon = "decimalLongitude", lat = "decimalLatitude") %>% # remove from ocean 
   distinct(decimalLongitude,decimalLatitude,speciesKey,datasetKey, .keep_all = TRUE) # remove location duplicates
 
-# Removed 52791 records.
-# 792055 rows remaining
+# Removed 52778 records.
+# 791729 rows remaining
 
 # check number of species
 table(d_sub$species)
@@ -98,8 +98,8 @@ d_sub[d_sub$species == "Subcoccinella vigintiquatuorpunctata", "species"] <- "Su
 # load world map
 wrld <- map_data("world")
 
-# sp <- sp_tab$species[31]
-for(sp in sp_tab$species){
+# sp <-  unique(d_sub$species)[31]
+for(sp in unique(d_sub$species)){
   
   # select data for the species
   sp_sub <- d_sub[d_sub$species == sp, ]
@@ -122,7 +122,6 @@ for(sp in sp_tab$species){
 }
 
 
-
 # Subset to records in Europe only
 
 # Europe country codes
@@ -133,13 +132,13 @@ EU <- c("BE", "BG", "CZ", "DK", "DE", "EE", "IE", "EL", "ES", "FR", "HR", "IT",
 
 # subset records, keep those for Europe only (not counting native range for the non-natives)
 d_EU <- d_sub[d_sub$countryCode %in% EU, ]
-# 631289 records
+# 631059 records
 
 
 # plot points to check from Europe only, map for each species
 
-# sp <- sp_tab$species[52]
-for(sp in sp_tab$species){
+# sp <- unique(d_sub$species)[52]
+for(sp in unique(d_sub$species)){
   
   # select data for the species
   sp_sub <- d_EU[d_EU$species == sp, ]
