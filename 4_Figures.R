@@ -25,7 +25,7 @@ if(!dir.exists(outdir)) dir.create(outdir)
 db <- read.csv(paste0(datadir, "Ladybird_Traits_DB_draft_CURRENT.csv"))
 
 # load in the ladybird data - UK
-d_GB <- read.csv("1_Species_record_summaries/GB_ladybird_occurrences_processed.csv")
+d_UK <- read.csv("1_Species_record_summaries/UK/Ladybird_occurrences_processed_UK.csv")
 
 # load in the ladybird data - Europe
 load(paste0(datadir, "Ladybirds_Europe_GBIF_processed.rdata")) # d_EU
@@ -40,11 +40,10 @@ load(paste0(datadir, "Ladybirds_Europe_GBIF_processed.rdata")) # d_EU
 # get world map
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
-
 ### Europe ###
-Europe <- world[which(world$continent == "Europe"),]
+#Europe <- world[which(world$continent == "Europe") & which(world$name == "Turkey"),]
 
-p1 <- ggplot(Europe) +
+p1 <- ggplot(world) +
   geom_hex(data = d_EU, aes(x = decimalLongitude, y = decimalLatitude), bins = 100) + 
   scale_fill_continuous(high = "black", low = "lightgreen") + 
   geom_sf(fill = NA, col = "black") +
@@ -58,7 +57,7 @@ ggsave(paste0(outdir, "Europe_records_map.png"), dpi = 250)
 
 
 # basic map for schematic
-ggplot(Europe) +
+ggplot(world) +
   geom_hex(data = d_EU, aes(x = decimalLongitude, y = decimalLatitude), bins = 100) + 
   scale_fill_continuous(high = "black", low = "lightgreen") + 
   geom_sf(fill = NA, col = "black") +
@@ -75,13 +74,13 @@ ggsave(paste0(outdir, "Europe_records_map_basic.png"), dpi = 250)
 
 
 
-### GB ###
+### UK ###
   
-# create the GB map
-GB <- world[which(world$geounit == "United Kingdom"),]
+# create the UK map
+UK <- world[which(world$geounit == "United Kingdom"),]
 
-p2 <- ggplot(GB) +
-  geom_hex(data = d_GB, aes(x = decimalLongitude.processed, y = decimalLatitude.processed)) + 
+p2 <- ggplot(UK) +
+  geom_hex(data = d_UK, aes(x = decimalLongitude.processed, y = decimalLatitude.processed)) + 
   scale_fill_continuous(high = "black", low = "lightblue3") + 
   geom_sf(fill = NA, col = "black") +
   coord_sf(xlim = c(-10,3), ylim = c(48,61), expand = FALSE) + 
@@ -90,12 +89,12 @@ p2 <- ggplot(GB) +
         legend.title = element_blank())
 
 # save
-ggsave(paste0(outdir, "GB_records_map.png"), dpi = 250)
+ggsave(paste0(outdir, "UK_records_map.png"), dpi = 250)
 
 
 # basic map for schematic
-ggplot(GB) +
-  geom_hex(data = d_GB, aes(x = decimalLongitude.processed, y = decimalLatitude.processed)) + 
+ggplot(UK) +
+  geom_hex(data = d_UK, aes(x = decimalLongitude.processed, y = decimalLatitude.processed)) + 
   scale_fill_continuous(high = "black", low = "lightblue3") + 
   geom_sf(fill = NA, col = "black") +
   coord_sf(xlim = c(-10,3), ylim = c(48,61), expand = FALSE) + 
@@ -107,7 +106,7 @@ ggplot(GB) +
         axis.text = element_blank())
 
 # save
-ggsave(paste0(outdir, "GB_records_map_basic.png"), dpi = 250)
+ggsave(paste0(outdir, "UK_records_map_basic.png"), dpi = 250)
 
 
 # combine figures for paper
