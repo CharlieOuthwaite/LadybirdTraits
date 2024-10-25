@@ -19,7 +19,7 @@ library(terra)
 
 # set directories
 datadir <- "0_Data/"
-lbdir <- "1_Species_record_summaries/"
+lbdir <- "1_Species_record_summaries/UK/"
 outdir <- "3_Species_temp_index/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
@@ -38,7 +38,7 @@ sp_tab <- read.csv(paste0(lbdir, "Species_record_Summaries.csv"))
 # using the records from GB. 
 
 # load in GB ladybird data
-lb_dat <- read.csv(paste0(lbdir, "GB_ladybird_occurrences_processed.csv"))
+lb_dat <- read.csv(paste0(lbdir, "Ladybird_occurrences_processed_UK.csv"))
 # this is the data from Script 0_ where GB data from 1970 have been processed
 
 # load in the climate data
@@ -64,7 +64,7 @@ ann_mean_temp <- mean(temp_all)
 species <- sp_tab$species
 
 # create space to save results in sp_tab
-sp_tab$GB_STI_yr <- NA
+sp_tab$UK_STI_yr <- NA
 
 # sp <- species[1]
 for (sp in species){
@@ -84,13 +84,13 @@ for (sp in species){
   sp_STI <- mean(extract(ann_mean_temp, sp_xy, ID = F)[, 1], na.rm = T)
   
   # add result into the sp_tab
-  sp_tab[sp_tab$species == sp, "GB_STI_yr"] <- sp_STI
+  sp_tab[sp_tab$species == sp, "UK_STI_yr"] <- sp_STI
   
 }
 
 
 # save the table
-write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.names = F)
+write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI_UK.csv"), row.names = F)
 
 
 
@@ -98,7 +98,7 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.nam
 #### Second, STI determined using just the max month ####
 
 # create space to save results in sp_tab
-sp_tab$GB_STI_peak <- NA
+sp_tab$UK_STI_peak <- NA
 
 
 # sp <- species[27]
@@ -116,7 +116,7 @@ for(sp in species){
   peak <- sp_tab$Max_month[sp_tab$species == sp]
 
   # one species don't have enough records for peaks
-  if (is.na(peak) == T){  sp_tab[sp_tab$species == sp, "GB_STI_peak"] <- NA 
+  if (is.na(peak) == T){  sp_tab[sp_tab$species == sp, "UK_STI_peak"] <- NA 
   
   }else{
   
@@ -129,22 +129,22 @@ for(sp in species){
    sp_STI_peak <- mean(extract(temp_peak, sp_xy, ID = F)[, 1], na.rm = T)
    
    # add result into the sp_tab
-   sp_tab[sp_tab$species == sp, "GB_STI_peak"] <- sp_STI_peak
+   sp_tab[sp_tab$species == sp, "UK_STI_peak"] <- sp_STI_peak
     
   }
   
 }
 
 # save the table
-write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.names = F)
+write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI_UK.csv"), row.names = F)
 
 
 # round STI values to 2 dp
-sp_tab$GB_STI_yr <- round(sp_tab$GB_STI_yr, digits = 2)
-sp_tab$GB_STI_peak <- round(sp_tab$GB_STI_peak, digits = 2)
+sp_tab$UK_STI_yr <- round(sp_tab$UK_STI_yr, digits = 2)
+sp_tab$UK_STI_peak <- round(sp_tab$UK_STI_peak, digits = 2)
 
 # save the table
-write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.names = F)
+write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI_UK.csv"), row.names = F)
 
 
 
@@ -205,7 +205,7 @@ for (sp in species){
 }
 
 # save the table
-write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.names = F)
+write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI_UK.csv"), row.names = F)
 
 
 #### Second, STI determined using just peak month ####
@@ -251,6 +251,6 @@ sp_tab$Europe_STI_yr <- round(sp_tab$Europe_STI_yr, digits = 2)
 sp_tab$Europe_STI_peak <- round(sp_tab$Europe_STI_peak, digits = 2)
 
 # save the table
-write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI.csv"), row.names = F)
+write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI_UK.csv"), row.names = F)
 
 
