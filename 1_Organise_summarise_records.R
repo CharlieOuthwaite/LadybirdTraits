@@ -83,7 +83,7 @@ ggsave(filename = paste0(outdir, "/Fig1_nrecords_year.pdf"),
 
 # Select only those to the species level
 lb_dat <- lb_dat[lb_dat$taxonRank.processed == "species", ] # 271260
-length(unique(lb_dat$scientificName.processed)) # 54
+length(unique(lb_dat$scientificName.processed)) # 54 species
 
 # take a look at the species names
 sp_names <- unique(lb_dat$scientificName.processed)
@@ -112,14 +112,14 @@ table(lb_dat$year.processed)
 hist(lb_dat$year.processed)
 lb_dat <- lb_dat[lb_dat$year.processed >= 1970, ] # 262732
 
-# Select records for Great Britain only
-lb_dat <- lb_dat[lb_dat$stateProvince.processed %in% c("England", "Scotland", "Wales", "Northern Ireland"), ] # 260396
+# Select records for UK, excluded Isle of Man and the blanks
+lb_dat <- lb_dat[lb_dat$stateProvince.processed %in% c("England", "Scotland", "Wales", "Northern Ireland"), ] # 260420
 
 # drop species that are not included in the database
 lb_dat <- lb_dat[!lb_dat$scientificName.processed %in% add_sp, ] ## 259257 (GB), 260396 UK excl IoM.
 
 
-#### Assess location of points, just use those that fall within country polygons
+#### Assess location of points
 
 #### Convert lat/lons to spatial points to use for data extraction ####
 lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
@@ -139,32 +139,33 @@ ggplot() +
   geom_sf(data = UK, fill = NA, col = "black") +
   geom_spatvector(data = lb_xy)
 
-# Just take those points that fall within the country polygons
-# convert to terra object
-UK <- vect(UK)
-
-# extract information for those points from the polygon layer
-pnt_info <- extract(x = UK, y = lb_xy)
-
-# remove those that have NA within the name field, so outside polygons
-pnt_info <- pnt_info[!is.na(pnt_info$name_en), ]
-
-# check the points subset
-ggplot() +
-  geom_sf(data = UK, fill = NA, col = "black") +
-  geom_spatvector(data = lb_xy[pnt_info$id.y])
-
-
-# subset data to the points within country polygons only
-lb_dat <- lb_dat[pnt_info$id.y, ] # 256571 rows
-
-# recreate subset of point locations for later summaries
-lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
-#plot(lb_xy) # take a look
-
+# # Just take those points that fall within the country polygons
+### commented out in the end as some were very close to boundary but were dropped. 
+# # convert to terra object
+# UK <- vect(UK)
+# 
+# # extract information for those points from the polygon layer
+# pnt_info <- extract(x = UK, y = lb_xy)
+# 
+# # remove those that have NA within the name field, so outside polygons
+# pnt_info <- pnt_info[!is.na(pnt_info$name_en), ]
+# 
+# # check the points subset
+# ggplot() +
+#   geom_sf(data = UK, fill = NA, col = "black") +
+#   geom_spatvector(data = lb_xy[pnt_info$id.y])
+# 
+# 
+# # subset data to the points within country polygons only
+# lb_dat <- lb_dat[pnt_info$id.y, ] # 256571 rows
+# 
+# # recreate subset of point locations for later summaries
+# lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
+# #plot(lb_xy) # take a look
+# 
 
 # save the organised dataset
-write.csv(lb_dat, paste0(outdir, "/GB_ladybird_occurrences_processed_UK.csv"))
+write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK.csv"))
 
 
 
@@ -266,6 +267,9 @@ sp_tab$Present_Wales <- NA
 sp_tab$nrecs_Scotland <- NA
 sp_tab$Present_Scotland <- NA
 
+sp_tab$nrecs_NorthernIreland <- NA
+sp_tab$Present_NorthernIreland <- NA
+
 # for each species, determine the number of records in each country
 for(i in 1:nrow(sp_tab)){
   # i <- 1
@@ -308,6 +312,18 @@ for(i in 1:nrow(sp_tab)){
     
   }
   
+  if("Northern Ireland" %in% sp_recs$stateProvince.processed) {
+    
+    sp_tab[i, "nrecs_NorthernIreland"] <- nrow(sp_recs[sp_recs$stateProvince.processed == "Northern Ireland", ])
+    sp_tab[i, "Present_NorthernIreland"] <- 1
+    
+  }else{
+    
+    sp_tab[i, "nrecs_NorthernIreland"] <- 0
+    sp_tab[i, "Present_NorthernIreland"] <- 0
+    
+  }
+  
   
 }
 
@@ -330,12 +346,19 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 
 # Some records have lat/lons but do not have GB grid references, 
 # need to fill the gaps first.
-
-# convert lat/lons to GB grid refs, uses the sparta package
-lb_dat$ConvertGridRef <- gps_latlon2gr(latitude = lb_dat$decimalLatitude.processed, 
-                                         longitude = lb_dat$decimalLongitude.processed, 
-                                         out_projection = "OSGB", 
-                                         return_type = "gr")[,1]
+# 
+# # convert lat/lons to GB grid refs, uses the sparta package
+# sub_dat <- lb_dat[!lb_dat$stateProvince.processed == "Northern Ireland", ]
+# lb_dat$ConvertGridRef[!lb_dat$stateProvince.processed == "Northern Ireland"] <- gps_latlon2gr(latitude = sub_dat$decimalLatitude.processed, 
+#                                                                                               longitude = sub_dat$decimalLongitude.processed, 
+#                                                                                               out_projection = "OSGB", 
+#                                                                                               return_type = "gr")[,1]
+# 
+# sub_dat <- lb_dat[lb_dat$stateProvince.processed == "Northern Ireland", ]
+# lb_dat$ConvertGridRef[lb_dat$stateProvince.processed == "Northern Ireland"] <- gps_latlon2gr(latitude = sub_dat$decimalLatitude.processed, 
+#                                                                                               longitude = sub_dat$decimalLongitude.processed, 
+#                                                                                               out_projection = "OSNI", 
+#                                                                                               return_type = "gr")[,1]
 
 # there are layers at multiple scales
 st_layers(paste0(datadir, "OS-British-National-Grids-main/os_bng_grids.gpkg"))
@@ -349,6 +372,9 @@ BNG <- vect(BNG)
 # reproject so the grid is in the same format as the points (tried the other way around and it didn't work)
 BNG <- project(x = BNG, y = "+proj=longlat +datum=WGS84")
 
+# plot(BNG)
+# plot(UK, add = T)
+
 # extract the 10km grid refs for the ladybird data
 lb_dat$GridRef10km <- extract(BNG, y = lb_xy)[,2]
 
@@ -356,19 +382,10 @@ lb_dat$GridRef10km <- extract(BNG, y = lb_xy)[,2]
 sp_tab$n_10k <- NA
 
 # now for each species, count how many unique 10km grid refs have records
-for(i in 1:nrow(sp_tab)){
-  # i <- 1
-  # subset to each species 
-  sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
-  
-  # determine number of 10km grid squares
-  n_10k <- length(unique(sp_recs$GridRef10km))
-  
-  # add results into table
-  sp_tab[i, "n_10k"] <- n_10k
-    
-}
-
+sp_tab$n_10k <- lb_dat %>%
+  group_by(scientificName.processed) %>% # group by species name
+  summarise(n_10k = length(unique(GridRef10km))) %>% # summarise the number of unique grid refs
+  pull(n_10k) # select just the one column to add to other table
 
 # save the table
 write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
@@ -382,18 +399,40 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 ############################################################
 
 # This section counts the number of vice-counties that each species has records in. 
-# shapefiles of the vice-counties are from the Biological Records Centre resources webpage.
-# https://www.brc.ac.uk/maps
+# shapefiles of the vice-counties are from:
+# GB - https://github.com/BiologicalRecordsCentre/vice-counties?tab=readme-ov-file
+# NI - https://github.com/SK53/Irish-Vice-Counties
 
 # load in the polygons
-vice <- vect(x = paste0(datadir, "vice-counties-master/3-mile/County_3mile_region.shp"))
-plot(vice)
+# GB
+vice_GB <- vect(x = paste0(datadir, "vice-counties-master/3-mile/County_3mile_region.shp"))
+plot(vice_GB)
+
+# NI
+vice_NI <- vect(x = paste0(datadir, "Irish-Vice-Counties-master/vice_counties/All_Irish_Vice_Counties_irish_grid.shp"))
+plot(vice_NI)
 
 # reproject the polygons to match the points
-vice <- project(x = vice, y = "+proj=longlat +datum=WGS84")
+vice_GB <- project(x = vice_GB, y = "+proj=longlat +datum=WGS84")
+vice_NI <- project(x = vice_NI, y = "+proj=longlat +datum=WGS84")
+
+# separate out point locations for NI
+lb_xy_GB <- vect(lb_dat[!lb_dat$stateProvince.processed == "Northern Ireland",], 
+                 geom =c("decimalLongitude.processed", "decimalLatitude.processed"), 
+                 crs = "+proj=longlat +datum=WGS84")
+lb_xy_NI <- vect(lb_dat[lb_dat$stateProvince.processed == "Northern Ireland",], 
+                 geom =c("decimalLongitude.processed", "decimalLatitude.processed"),
+                 crs = "+proj=longlat +datum=WGS84")
 
 # extract vice country info from the polygons
-lb_dat$vicecounty <- extract(vice, lb_xy)[, 3]
+lb_dat$vicecounty[!lb_dat$stateProvince.processed == "Northern Ireland"] <- extract(vice_GB, lb_xy_GB)[, 3]
+lb_dat$vicecounty[lb_dat$stateProvince.processed == "Northern Ireland"] <- extract(vice_NI, lb_xy_NI)[, 4]
+
+
+# extract vice country info from the polygons
+lb_dat$vicecounty2[!lb_dat$stateProvince.processed == "Northern Ireland"] <- vice_GB[nearest(lb_xy_GB, vice_GB, centroids = F)[, 4]]$VCNAME
+lb_dat$vicecounty2[lb_dat$stateProvince.processed == "Northern Ireland"] <- nearest(vice_NI, lb_xy_NI)[, 4]
+
 
 # set up space in the table
 sp_tab$n_vicecounties <- NA
@@ -405,12 +444,22 @@ for(i in 1:nrow(sp_tab)){
   sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
   
   # determine number of 10km grid squares
-  n_vice <- length(unique(sp_recs$vicecounty))
+  # some a few records have NAs where the point is slightly outside polygons
+  n_vice <- length(na.omit(unique(sp_recs$vicecounty)))
   
   # add results into table
   sp_tab[i, "n_vicecounties"] <- n_vice
   
 }
+
+
+# now for each species, count how many unique 10km grid refs have records
+sp_tab$n_10k <- lb_dat %>%
+  group_by(scientificName.processed) %>% # group by species name
+  summarise(n_10k = length(unique(GridRef10km))) %>% # summarise the number of unique grid refs
+  pull(n_10k) # select just the one column to add to other table
+
+
 
 
 # save the table
@@ -515,6 +564,11 @@ ggsave(paste0(outdir, "Histograms/", sp_tab[i, 1], ".png"))
 
 }
 
+
+
+
+# save the dataset with all added variables
+write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_Allvars.csv"))
 
 
 
