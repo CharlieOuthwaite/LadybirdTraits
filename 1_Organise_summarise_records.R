@@ -29,48 +29,125 @@ outdir <- "1_Species_record_summaries/UK/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the data from the NBN
-ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/records-2024-03-16_LadybirdSurvey.csv"))
+#ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/records-2024-03-16_LadybirdSurvey.csv")) # this dataset doesn't include data after 2011
+ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/BRC_Ladybirds_18-11-2024.csv")) # updated dataset from the BRC
 irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03-16_-_iRecord_Ladybirds.csv"))
 
-# combine datasets
-summary(names(ladybird_survey) == names(irecord_ladybirds)) # column names the same
-lb_dat <- rbind(ladybird_survey, irecord_ladybirds)
+# ladybird_survey 168245 records, 75 columns
+# irecord_ladybirds 155365 records, 204 columns
+
+
+# need to organise the datasets so that they can be combined, currently different columns, 
+# some missing info inc lat/lon that needs to be determined.
+
+
+#### 1. Data explorations ####
+
+
+## explore ladybird survey data ##
+
+# how many records have same start and end date?
+summary(ladybird_survey$STARTDATE == ladybird_survey$ENDDATE)
+#           FALSE    TRUE 
+# logical   13724  154521 
+
+length(unique(ladybird_survey$NAME)) # 54
+length(unique(ladybird_survey$CONCEPT)) # 54
+length(unique(ladybird_survey$GRIDREF)) # 48405
+table(ladybird_survey$DATE_TYPE)
+# Date specified to a number of days                     Date specified to nearest year 
+#                               1359                                               6730 
+# Date specified to range of months                   Date specified to range of years 
+#                               214                                               2773 
+# Date specified to the nearest day   Date specified to the nearest month (1st - last) 
+#                            154233                                               2183 
+# No date or unknown, combined with dataset end date           Only the end date to nearest year known. 
+#                               299                                                454
+
+
+# convert dates
+ladybird_survey$STARTDATE <- as.Date(ladybird_survey$STARTDATE, format = "%d/%m/%Y")
+ladybird_survey$ENDDATE <- as.Date(ladybird_survey$ENDDATE, format = "%d/%m/%Y")
+
+# extract year of sample
+ladybird_survey$year_start <- format(ladybird_survey$STARTDATE, "%Y")
+ladybird_survey$year_end <- format(ladybird_survey$ENDDATE, "%Y")
+summary(ladybird_survey$year_start == ladybird_survey$year_end)
+#    Mode   FALSE    TRUE    NA's 
+# logical    2890  164602     753 
+
+table(ladybird_survey$year_start) # 1600 - 2021
+table(ladybird_survey$year_end) # 1816 - 2021
+
+
+
+## explore irecord data ##
 
 # look at column names
-names(lb_dat)
+names(irecord_ladybirds)
 
 # subset to desired columns
-lb_dat <- lb_dat[, c(17, 18, 30, 38, 44, 45, 66, 71:73, 87, 95, 111, 129, 130, 138, 141, 150, 155, 163, 179, 190, 191, 194, 205, 211:217, 220:229)]
+irecord_sub <- irecord_ladybirds[, c(17, 18, 30, 38, 44, 45, 66, 71:73, 87, 95, 111, 129, 130, 138, 141, 150, 155, 163, 179, 190, 191, 194, 205, 211:217, 220:229)]
 
 # a few summaries of the remaining
-nrow(lb_dat) # 278964 observations
-table(lb_dat$basisOfRecord.processed) # all human observation
-table(lb_dat$lifeStage) # Mostly adult records, some larva, very few egg/pupa/other
-table(lb_dat$occurrenceStatus.processed) # all present
-range(as.Date(lb_dat$eventDate), na.rm = T) #"1834-02-07" "2024-02-27"
-range(lb_dat$year.processed, na.rm = T) # 1600 2024
-range(lb_dat$eventDate[!lb_dat$eventDate == ""]) # "/1890" "2024-02-27"
-table(lb_dat$country.processed)
+nrow(irecord_sub) # 155365 observations
+table(irecord_sub$basisOfRecord.processed) # all human observation
+table(irecord_sub$lifeStage) # Mostly adult records, some larva, very few egg/pupa/other, some unknown
+table(irecord_sub$occurrenceStatus.processed) # all present
+range(as.Date(irecord_sub$eventDate), na.rm = T) # "1961-07-20" "2024-02-27"
+range(irecord_sub$year.processed, na.rm = T) # 1961 2024
+range(irecord_sub$eventDate[!irecord_sub$eventDate == ""]) # "1961-07-20" "2024-02-27"
+table(irecord_sub$country.processed)
 #                United Kingdom 
-#           1135         277829 
-summary(is.na(lb_dat$coordinatePrecision)) # all NAs
-length(unique(lb_dat$gridReference)) # 51905 unique grid refs
-length(unique(lb_dat$scientificName.processed)) # 66
-table(lb_dat$taxonRank.processed)
+#           341          155024  
+summary(is.na(irecord_sub$coordinatePrecision)) # all NAs
+length(unique(irecord_sub$gridReference)) # 50006 unique grid refs
+length(unique(irecord_sub$scientificName.processed)) # 63
+table(irecord_sub$taxonRank.processed)
 # family              form             genus           species species aggregate 
-#    146              7110               153            271260               295 
+#    146              7110               149            147876                84 
 
-table(lb_dat$stateProvince.processed)
+table(irecord_sub$stateProvince.processed)
 
 ### subsetting the data ###
-#               England      Isle of Man Northern Ireland   Scotland   Wales 
-# 1135           254913             1389             1265   12033      8229
+#                  England      Isle of Man Northern Ireland         Scotland            Wales 
+#     341           137058             1349              678            10584             5355
+
+
+length(unique(irecord_sub$scientificName.processed)) #63
+
+
+### Create plot of n records over time from both datasets ###
+
+# limited filtering here, just presenting increase in records over time 
+
+# combine datasets, simple combination only here to plot number of records per year. 
+
+# first, remove those where data could span multiple years
+lb_surv <- ladybird_survey[!ladybird_survey$DATE_TYPE %in% c("Date specified to range of years", "No date or unknown, combined with dataset end date", "Only the end date to nearest year known."), ]
+# 164719 rows
+
+# keep records for 1970 onward
+lb_surv <- lb_surv[lb_surv$year_start >= 1970, ]
+# 161890 rows
+
+# subset to those with same start and end year
+lb_surv <- lb_surv[lb_surv$year_start == lb_surv$year_end, ]
+# 161777
+
+# keep records for 1970 onward
+lb_irec <- irecord_sub[irecord_sub$year.processed >= 1970, ]
+# 155358 rows
+
+# just extract the years for plotting
+plotdata <- data.frame(year = c(as.numeric(lb_irec$year.processed), as.numeric(lb_surv$year_end)))
+plotdata <- subset(plotdata, year >= 1970 & year <= 2023)
 
 
 #### Figure of number of records over time ####
 
-ggplot(data = lb_dat[lb_dat$year.processed >= 1970 & lb_dat$year.processed <= 2023, ]) + 
-  geom_bar(aes(x = year.processed), fill = c("#8B2323")) + 
+ggplot(data = plotdata) + 
+  geom_bar(aes(x = year), fill = c("#8B2323")) + 
   xlab("Year") +
   ylab("Number of records") + 
   theme_bw() +
@@ -81,48 +158,58 @@ ggsave(filename = paste0(outdir, "/Fig1_nrecords_year.pdf"),
        dpi = 250, width = 4, height = 3, units = "in")
 
 
+
+
+#### 2. Organise data so datasets can be combined ####
+
+# UK ladybird survey data is organised slightly differently to the NBN data for iRecord.
+
+
+## irecord data ##
+
 # Select only those to the species level
-lb_dat <- lb_dat[lb_dat$taxonRank.processed == "species", ] # 271260
-length(unique(lb_dat$scientificName.processed)) # 54 species
+irecord_sub <- irecord_sub[irecord_sub$taxonRank.processed == "species", ] # 147876
+length(unique(irecord_sub$scientificName.processed)) # 52 species
 
 # take a look at the species names
-sp_names <- unique(lb_dat$scientificName.processed)
-sp_names[order(sp_names)]
+sp_names_irec <- unique(irecord_sub$scientificName.processed)
+sp_names_irec[order(sp_names_irec)]
 
 # seem to have some additional species here than in the trait dataset
-table(lb_dat$scientificName.processed)
+table(irecord_sub$scientificName.processed)
 
-# "Cryptolaemus montrouzieri"  # 7 records
-# "Exochomus nigromaculatus"  # 3 records
+# "Cryptolaemus montrouzieri"  # 6 records
+# "Exochomus nigromaculatus"  # 1 records
 # "Oenopia conglobata" # 3 records
-# "Rodolia cardinalis" # 7 records
-# "Scymnus rubromaculatus" # 9 records
-# "Vibidia duodecimguttata" # 2 records
+# "Rodolia cardinalis" # 2 records
+# "Scymnus rubromaculatus" # 6 records
+
 
 # separate names of additional species to subset later
 add_sp <- c("Cryptolaemus montrouzieri", "Exochomus nigromaculatus", "Oenopia conglobata",
-            "Rodolia cardinalis", "Scymnus rubromaculatus","Vibidia duodecimguttata")
+            "Rodolia cardinalis", "Scymnus rubromaculatus")
 
 
 # Select records with complete date information
-lb_dat <- lb_dat[!lb_dat$eventDate.processed == "", ] # 263890
+irecord_sub <- irecord_sub[!irecord_sub$eventDate.processed == "", ] # 147876
 
 # only use data from 1970 onwards
-table(lb_dat$year.processed)
-hist(lb_dat$year.processed)
-lb_dat <- lb_dat[lb_dat$year.processed >= 1970, ] # 262732
+table(irecord_sub$year.processed)
+hist(irecord_sub$year.processed)
+irecord_sub <- irecord_sub[irecord_sub$year.processed >= 1970, ] # 147869
 
 # Select records for UK, excluded Isle of Man and the blanks
-lb_dat <- lb_dat[lb_dat$stateProvince.processed %in% c("England", "Scotland", "Wales", "Northern Ireland"), ] # 260420
+irecord_sub <- irecord_sub[irecord_sub$stateProvince.processed %in% c("England", "Scotland", "Wales", "Northern Ireland"), ] # 146212
 
 # drop species that are not included in the database
-lb_dat <- lb_dat[!lb_dat$scientificName.processed %in% add_sp, ] ## 259257 (GB), 260396 UK excl IoM.
+irecord_sub <- irecord_sub[!irecord_sub$scientificName.processed %in% add_sp, ] ## 146196 UK excl IoM.
 
+length(unique(irecord_sub$scientificName.processed)) # 47 species
 
 #### Assess location of points
 
 #### Convert lat/lons to spatial points to use for data extraction ####
-lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
+lb_xy <- vect(irecord_sub, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
 #plot(lb_xy) # take a look
 
 # get world map
@@ -163,6 +250,37 @@ ggplot() +
 # lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
 # #plot(lb_xy) # take a look
 # 
+
+
+
+
+## UK Ladybird Survey data ##
+
+# subset to relevant columns
+surv_sub <- ladybird_survey[ , c(2:6, 9:10, 13, 15, 17)]
+
+# extract years and months from dates
+surv_sub$year_start <- format(surv_sub$STARTDATE, "%Y")
+surv_sub$year_end <- format(surv_sub$ENDDATE, "%Y")
+
+# summary(surv_sub$year_start == surv_sub$year_end)
+
+# just select records where date to the nearest day
+surv_sub <- surv_sub[surv_sub$DATE_TYPE == c("Date specified to the nearest day"), ]
+# 154233 rows
+
+# summary(surv_sub$year_start == surv_sub$year_end)
+
+# still some where the start and end dates are different
+surv_sub <- surv_sub[surv_sub$STARTDATE == surv_sub$ENDDATE, ] # 154155
+
+# extract months
+surv_sub$month <- format(surv_sub$STARTDATE, "%m")
+
+
+
+
+# organise column names
 
 # save the organised dataset
 write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK.csv"))
