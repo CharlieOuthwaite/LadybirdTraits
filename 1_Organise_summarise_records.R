@@ -29,7 +29,7 @@ outdir <- "1_Species_record_summaries/UK/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the data from the NBN
-#ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/records-2024-03-16_LadybirdSurvey.csv")) # this dataset doesn't include data after 2011
+#survnbn <- read.csv(paste0(datadir, "LadybirdSurvey/records-2024-03-16_LadybirdSurvey.csv")) # this dataset doesn't include data after 2011
 ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/BRC_Ladybirds_18-11-2024.csv")) # updated dataset from the BRC
 irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03-16_-_iRecord_Ladybirds.csv"))
 
@@ -278,7 +278,77 @@ surv_sub <- surv_sub[surv_sub$STARTDATE == surv_sub$ENDDATE, ] # 154155
 surv_sub$month <- format(surv_sub$STARTDATE, "%m")
 
 
+# extract country information
 
+# table(surv_sub$PRECISION)
+
+# remove records where the grid ref type is not OSGB or OSNI
+surv_sub <- surv_sub[surv_sub$GRIDREF_TYPE %in% c("OSGB", "OSNI"), ] # 154085
+
+# convert grid refs to lat/lon (also needed for temp extraction)
+latlons <- gr2gps_latlon(gridref = surv_sub$GRIDREF, precision = surv_sub$PRECISION, projection = surv_sub$GRIDREF_TYPE)
+
+# add lat lons into survey data table  
+surv_sub <- cbind(surv_sub, latlons)
+
+
+# use polygons of uk boundaries to extract country information
+
+# download maps
+UKmap <- ne_states(geounit = c("England", "Scotland", "Wales", "Northern Ireland", "Ireland"), returnclass = "sv")
+#plot(UKmap)
+
+
+# Convert lat/lons to spatial points to use for data extraction ####
+lb_xy <- vect(surv_sub, geom =c("LONGITUDE", "LATITUDE"))
+#plot(lb_xy) # take a look
+
+# extract information for those points from the polygon layer
+pnt_info <- extract(x = UKmap, y = lb_xy)
+
+# add country info into dataset
+surv_sub$country <- pnt_info$geonunit
+
+countNA <- pnt_info[is.na(pnt_info$geonunit), ]
+
+# check the points subset
+ggplot() +
+  geom_sf(data = UKmap, fill = NA, col = "black") +
+  geom_spatvector(data = lb_xy)
+
+plot(UKmap)
+plot(lb_xy[countNA$id.y], add = T)
+
+crs(lb_xy) <- crs(UKmap)
+
+nearpol <- nearest(lb_xy, UKmap, centroids = T)
+
+surv_sub$neart_cntry_ID <- nearpol$to_id # think zeros must be NA as there are 264 pos values
+
+surv_sub$neart_cntry_ID[surv_sub$neart_cntry_ID == 0] <- NA
+
+surv_sub$country <- NA
+
+surv_sub$country[!is.na(surv_sub$neart_cntry_ID)]  <- UKmap$geonunit[surv_sub$neart_cntry_ID[!is.na(surv_sub$neart_cntry_ID)]]
+
+# subset data to the points within country polygons only
+lb_dat <- lb_dat[pnt_info$id.y, ] # 256571 rows
+
+# recreate subset of point locations for later summaries
+lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
+#plot(lb_xy) # take a look
+
+
+
+
+
+
+
+## organise species names ##
+
+length(unique(surv_sub$NAME)) #52
+
+test <- surv_sub[surv_sub$NAME %in% sp_names_irec, ] # 153665
 
 # organise column names
 
