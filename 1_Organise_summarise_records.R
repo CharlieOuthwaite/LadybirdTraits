@@ -373,17 +373,43 @@ surv_sub[which(surv_sub$country == "Wales" & surv_sub$VC %in% c(4, 5)), "country
 # remove records from Ireland
 surv_sub <- surv_sub[which(!surv_sub$country == "Ireland"), ] # 194882
 
-# lb_xy <- vect(surv_sub, geom =c("LONGITUDE", "LATITUDE"))
-# plot(UKmap)
-# plot(lb_xy[surv_sub$country == "Wales"], add = T)
+
+test <- ladybird_survey[which(ladybird_survey$NAME == "Nephus bisignatus" & ladybird_survey$STARTDATE == "09/05/1996"), ]
+ll <- gr2gps_latlon(gridref = test$GRIDREF, precision = test$PRECISION, projection = test$GRIDREF_TYPE)
+
+lb_xy <- vect(ll, geom =c("LONGITUDE", "LATITUDE"))
+plot(UKmap)
+plot(lb_xy, add = T)
+
+surv_sub <- read.csv(paste0(outdir, "/Ladybird_Survey_data_processed_UK.csv"))
+
+
+
 
 ## organise species names ##
 
 length(unique(surv_sub$NAME)) #81
 
-test <- surv_sub[surv_sub$NAME %in% sp_names_irec, ] # 153665
+surv_sub <- surv_sub[which(surv_sub$NAME %in% sp_names_irec | surv_sub$NAME %in% c("Nephus bisignatus")), ] # 153665
+length(unique(surv_sub$NAME)) #51
+
+# remove additional species not covered by our database
+surv_sub <- surv_sub[!surv_sub$NAME %in% add_sp, ]
+length(unique(surv_sub$NAME)) #48
+
+#table(surv_sub$NAME)
+
+
+# save the processed survey data
+write.csv(surv_sub, paste0(outdir, "/Ladybird_Survey_data_processed_UK.csv"))
+
+
+
 
 # organise column names
+
+
+# combined datasets
 
 # save the organised dataset
 write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK.csv"))
