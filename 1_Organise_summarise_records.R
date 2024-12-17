@@ -30,15 +30,16 @@ if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the data from the NBN
 #survnbn <- read.csv(paste0(datadir, "LadybirdSurvey/records-2024-03-16_LadybirdSurvey.csv")) # this dataset doesn't include data after 2011
-ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/BRC_Ladybirds_18-11-2024.csv")) # updated dataset from the BRC
-irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03-16_-_iRecord_Ladybirds.csv"))
+ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/Coccinellid_ladybird_non-ladybird_21-11-2024.csv")) # updated dataset from the BRC. excluding iRecord
+irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03-16_-_iRecord_Ladybirds.csv")) # in recent years, all verified records are via iRecord
 
-# ladybird_survey 168245 records, 75 columns
+# ladybird_survey 220647 records, 77 columns
 # irecord_ladybirds 155365 records, 204 columns
 
 
-# need to organise the datasets so that they can be combined, currently different columns, 
-# some missing info inc lat/lon that needs to be determined.
+# need to organise the datasets so that they can be combined, 
+# currently the data from BRC is formatted very differently to that from iRecord via the NBN
+# There is some missing info inc lat/lon that needs to be determined.
 
 
 #### 1. Data explorations ####
@@ -48,21 +49,21 @@ irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03
 
 # how many records have same start and end date?
 summary(ladybird_survey$STARTDATE == ladybird_survey$ENDDATE)
-#           FALSE    TRUE 
-# logical   13724  154521 
+# Mode      FALSE    TRUE 
+# logical   16940  203707 
 
-length(unique(ladybird_survey$NAME)) # 54
-length(unique(ladybird_survey$CONCEPT)) # 54
-length(unique(ladybird_survey$GRIDREF)) # 48405
+length(unique(ladybird_survey$NAME)) # 83
+length(unique(ladybird_survey$CONCEPT)) # 83
+length(unique(ladybird_survey$GRIDREF)) # 72783
 table(ladybird_survey$DATE_TYPE)
 # Date specified to a number of days                     Date specified to nearest year 
-#                               1359                                               6730 
+# 1703                                                   7646 
 # Date specified to range of months                   Date specified to range of years 
-#                               214                                               2773 
-# Date specified to the nearest day   Date specified to the nearest month (1st - last) 
-#                            154233                                               2183 
-# No date or unknown, combined with dataset end date           Only the end date to nearest year known. 
-#                               299                                                454
+# 235                                                 3940 
+# Date specified to the nearest day                   Date specified to the nearest month (1st - last) 
+# 203408                                              2498 
+# No date or unknown, combined with dataset end date  Only the end date to nearest year known. 
+# 352                                                 865 
 
 
 # convert dates
@@ -74,7 +75,7 @@ ladybird_survey$year_start <- format(ladybird_survey$STARTDATE, "%Y")
 ladybird_survey$year_end <- format(ladybird_survey$ENDDATE, "%Y")
 summary(ladybird_survey$year_start == ladybird_survey$year_end)
 #    Mode   FALSE    TRUE    NA's 
-# logical    2890  164602     753 
+# logical    4098  215332    1217 
 
 table(ladybird_survey$year_start) # 1600 - 2021
 table(ladybird_survey$year_end) # 1816 - 2021
@@ -125,15 +126,15 @@ length(unique(irecord_sub$scientificName.processed)) #63
 
 # first, remove those where data could span multiple years
 lb_surv <- ladybird_survey[!ladybird_survey$DATE_TYPE %in% c("Date specified to range of years", "No date or unknown, combined with dataset end date", "Only the end date to nearest year known."), ]
-# 164719 rows
+# 215490 rows
 
 # keep records for 1970 onward
 lb_surv <- lb_surv[lb_surv$year_start >= 1970, ]
-# 161890 rows
+# 212128 rows
 
 # subset to those with same start and end year
 lb_surv <- lb_surv[lb_surv$year_start == lb_surv$year_end, ]
-# 161777
+# 211981
 
 # keep records for 1970 onward
 lb_irec <- irecord_sub[irecord_sub$year.processed >= 1970, ]
@@ -141,7 +142,7 @@ lb_irec <- irecord_sub[irecord_sub$year.processed >= 1970, ]
 
 # just extract the years for plotting
 plotdata <- data.frame(year = c(as.numeric(lb_irec$year.processed), as.numeric(lb_surv$year_end)))
-plotdata <- subset(plotdata, year >= 1970 & year <= 2023)
+plotdata <- subset(plotdata, year >= 1970 & year <= 2023) # few recs for 2024
 
 
 #### Figure of number of records over time ####
@@ -155,7 +156,7 @@ ggplot(data = plotdata) +
 
 # save
 ggsave(filename = paste0(outdir, "/Fig1_nrecords_year.pdf"), 
-       dpi = 250, width = 4, height = 3, units = "in")
+       dpi = 250, width = 4.5, height = 3, units = "in")
 
 
 
