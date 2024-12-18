@@ -433,8 +433,18 @@ names(surv_dat) <- names(irec_dat)
 lb_dat <- rbind(surv_dat, irec_dat)
 nrow(lb_dat) # 340541 rows
 
+
+## final subsetting ##
+
+# Only use records from 1970 onwards
+lb_dat <- lb_dat[lb_dat$year.processed >= 1970, ]
+# 338769 rows
+lb_dat <- lb_dat[lb_dat$year.processed <= 2023, ]
+# 338152 rows
+
 # save the organised dataset
-write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"))
+write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"), row.names = F)
+#lb_dat <- read.csv(paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"))
 
 
 
@@ -451,7 +461,9 @@ write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"))
 sp_tab <- data.frame(species = sort(unique(lb_dat$scientificName.processed))) # 48 species
 #sp_tab <- read.csv(paste0(outdir, "Species_record_Summaries.csv"))
 
-
+# create spatial points for later use
+# reset lat/lon 
+lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
 
 ##%######################################################%##
 #                                                          #
@@ -613,22 +625,6 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 # https://github.com/OrdnanceSurvey/OS-British-National-Grids
 
 
-# Some records have lat/lons but do not have GB grid references, 
-# need to fill the gaps first.
-# 
-# # convert lat/lons to GB grid refs, uses the sparta package
-# sub_dat <- lb_dat[!lb_dat$stateProvince.processed == "Northern Ireland", ]
-# lb_dat$ConvertGridRef[!lb_dat$stateProvince.processed == "Northern Ireland"] <- gps_latlon2gr(latitude = sub_dat$decimalLatitude.processed, 
-#                                                                                               longitude = sub_dat$decimalLongitude.processed, 
-#                                                                                               out_projection = "OSGB", 
-#                                                                                               return_type = "gr")[,1]
-# 
-# sub_dat <- lb_dat[lb_dat$stateProvince.processed == "Northern Ireland", ]
-# lb_dat$ConvertGridRef[lb_dat$stateProvince.processed == "Northern Ireland"] <- gps_latlon2gr(latitude = sub_dat$decimalLatitude.processed, 
-#                                                                                               longitude = sub_dat$decimalLongitude.processed, 
-#                                                                                               out_projection = "OSNI", 
-#                                                                                               return_type = "gr")[,1]
-
 # there are layers at multiple scales
 st_layers(paste0(datadir, "OS-British-National-Grids-main/os_bng_grids.gpkg"))
 
@@ -643,6 +639,7 @@ BNG <- project(x = BNG, y = "+proj=longlat +datum=WGS84")
 
 # plot(BNG)
 # plot(UK, add = T)
+# plot(lb_xy, add = T)
 
 # extract the 10km grid refs for the ladybird data
 lb_dat$GridRef10km <- extract(BNG, y = lb_xy)[,2]
@@ -675,11 +672,13 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 # load in the polygons
 # GB
 vice_GB <- vect(x = paste0(datadir, "vice-counties-master/3-mile/County_3mile_region.shp"))
-plot(vice_GB)
+# plot(vice_GB)
+# plot(lb_xy_GB, add = T)
 
 # NI
 vice_NI <- vect(x = paste0(datadir, "Irish-Vice-Counties-master/vice_counties/All_Irish_Vice_Counties_irish_grid.shp"))
-plot(vice_NI)
+# plot(vice_NI)
+# plot(lb_xy_NI, add = T)
 
 # reproject the polygons to match the points
 vice_GB <- project(x = vice_GB, y = "+proj=longlat +datum=WGS84")
@@ -803,7 +802,7 @@ for(i in 1:nrow(sp_tab)){
     xlab("Month - January to December") +
     ylab("Count")
   
-ggsave(paste0(outdir, "Histograms/", sp_tab[i, 1], ".png"))
+ggsave(paste0(outdir, "Histograms/", sp_tab[i, 1], "_UPDATE.png"))
 
 }
 
