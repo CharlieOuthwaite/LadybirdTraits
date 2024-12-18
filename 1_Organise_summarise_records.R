@@ -8,6 +8,8 @@
 
 # This script is used to summarise the distribution of species records. 
 # Column in the trait database linked to each section of the script is stated. 
+# Since data from ladybird survey and irecord are formatted differently, 
+# processing of the datasets is required first.
 
 # clear environment
 rm(list = ls())
@@ -42,7 +44,12 @@ irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03
 # There is some missing info inc lat/lon that needs to be determined.
 
 
-#### 1. Data explorations ####
+##%######################################################%##
+#                                                          #
+####               1. Data explorations                 ####
+#                                                          #
+##%######################################################%##
+
 
 
 ## explore ladybird survey data ##
@@ -161,7 +168,12 @@ ggsave(filename = paste0(outdir, "/Fig1_nrecords_year.pdf"),
 
 
 
-#### 2. Organise data so datasets can be combined ####
+##%######################################################%##
+#                                                          #
+####   2. Organise data so datasets can be combined     ####
+#                                                          #
+##%######################################################%##
+
 
 # UK ladybird survey data is organised differently to the NBN data from iRecord.
 
@@ -381,7 +393,6 @@ lb_xy <- vect(ll, geom =c("LONGITUDE", "LATITUDE"))
 plot(UKmap)
 plot(lb_xy, add = T)
 
-surv_sub <- read.csv(paste0(outdir, "/Ladybird_Survey_data_processed_UK.csv"))
 
 
 
@@ -399,26 +410,37 @@ length(unique(surv_sub$NAME)) #48
 
 #table(surv_sub$NAME)
 
-
 # save the processed survey data
-write.csv(surv_sub, paste0(outdir, "/Ladybird_Survey_data_processed_UK.csv"))
+write.csv(surv_sub, paste0(outdir, "/Ladybird_Survey_data_processed_UK.csv"), row.names = F)
+#surv_sub <- read.csv(paste0(outdir, "/Ladybird_Survey_data_processed_UK.csv"))
 
 
 
+### combine the two datasets ###
 
-# organise column names
+# first subset to required columns
+surv_dat <- surv_sub[ , c(2:4, 12, 13:16)]
+irec_dat <- irecord_sub[ , c(8, 9, 11, 15:17, 24)]
 
+# reorder colummns
+surv_dat <- surv_dat[ , c(1, 6:7, 3, 5, 4, 8)]
+irec_dat <- irec_dat[ , c(7, 6, 4, 3, 2, 1, 5)]
 
-# combined datasets
+# rename columns (make them match irecord names as remaining code uses that format)
+names(surv_dat) <- names(irec_dat)
+
+# combine datasets
+lb_dat <- rbind(surv_dat, irec_dat)
+nrow(lb_dat) # 340541 rows
 
 # save the organised dataset
-write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK.csv"))
+write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"))
 
 
 
 ############################################################
 #                                                          #
-#              Summarising records by species              #
+#           3. Summarising records by species              #
 #                                                          #
 ############################################################
 
