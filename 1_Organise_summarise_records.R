@@ -809,7 +809,8 @@ ggsave(paste0(outdir, "Histograms/", sp_tab[i, 1], "_UPDATE.png"))
 
 
 # save the dataset with all added variables
-write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_Allvars.csv"))
+write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_Allvars.csv"), row.names = F)
+#lb_dat <- read.csv(paste0(outdir, "/Ladybird_occurrences_processed_UK_Allvars.csv"))
 
 
 
