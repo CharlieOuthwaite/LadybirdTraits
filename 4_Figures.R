@@ -25,7 +25,7 @@ if(!dir.exists(outdir)) dir.create(outdir)
 db <- read.csv(paste0(datadir, "Ladybird_Traits_DB_draft_CURRENT.csv"))
 
 # load in the ladybird data - UK
-d_UK <- read.csv("1_Species_record_summaries/UK/Ladybird_occurrences_processed_UK.csv")
+d_UK <- read.csv("1_Species_record_summaries/UK/Ladybird_occurrences_processed_UK_Allvars.csv")
 
 # load in the ladybird data - Europe
 load(paste0(datadir, "Ladybirds_Europe_GBIF_processed.rdata")) # d_EU
