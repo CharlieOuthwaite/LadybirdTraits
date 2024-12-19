@@ -38,8 +38,8 @@ sp_tab <- read.csv(paste0(lbdir, "Species_record_Summaries.csv"))
 # using the records from GB. 
 
 # load in GB ladybird data
-lb_dat <- read.csv(paste0(lbdir, "Ladybird_occurrences_processed_UK.csv"))
-# this is the data from Script 0_ where GB data from 1970 have been processed
+lb_dat <- read.csv(paste0(lbdir, "Ladybird_occurrences_processed_UK_Allvars.csv"))
+# this is the data from Script 0_ where UK data from 1970 have been processed
 
 # load in the climate data
 # downloaded from https://www.worldclim.org/data/worldclim21.html#google_vignette
@@ -224,7 +224,7 @@ for(sp in species){
   sp_xy <- vect(sp_dat, geom = c("decimalLongitude", "decimalLatitude"))
   
   # use max month month for adults determined from the records
-  peak <- sp_tab$Max_month[sp_tab$species == sp]
+  peak <- sp_tab$Max_month_EU[sp_tab$species == sp]
 
   # one species doesn't have enough records for peaks
   if (is.na(peak) == T){  sp_tab[sp_tab$species == sp, "Europe_STI_peak"] <- NA 
