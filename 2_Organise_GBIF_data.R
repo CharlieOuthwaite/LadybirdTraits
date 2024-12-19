@@ -162,7 +162,57 @@ for(sp in unique(d_sub$species)){
 
 # save dataset for European records from GBIF
 save(d_EU, file = paste0(datadir, "Ladybirds_Europe_GBIF_processed.rdata"))
+#load(file = paste0(datadir, "Ladybirds_Europe_GBIF_processed.rdata"))
 
 
+
+
+## add peak of European records to the species table
+
+# load in the table
+sp_tab <- read.csv("1_Species_record_summaries/UK/Species_record_Summaries.csv")
+
+# create empty column
+sp_tab$Max_month_EU <- NA
+
+# loop through each species to get the month with the highest number of records
+# to compare to that calculated from the UK data
+for(i in 1:nrow(sp_tab)){
+  # i <- 1
+  
+  # subset to each species 
+  sp_recs <- d_EU[d_EU$species == sp_tab[i, 1], ]
+  
+  # determine peaks
+  
+  # create empty dataframe to ensure all months have data even if no records
+  months <- data.frame(month  = 1:12)
+  
+  # frequency table of months
+  months_freq <- sp_recs %>% 
+    group_by(month) %>% tally()
+  
+  # ensure all months have data by merging above with empty data frame
+  months_freq <- merge(months, months_freq, by = "month", all.x = T)
+  
+  # replace NAs with 0s
+  months_freq[is.na(months_freq$n), "n"] <- 0
+  
+  # If there are fewer than 20 records for the species. Set the month with the 
+  # max records and the peak months to NA.
+  if(nrow(sp_recs) < 20){
+    
+    sp_tab[sp_tab$species == sp_tab[i, 1], "Max_month_EU"] <- NA
+
+    
+  }else{
+    
+    # month with the most records
+    sp_tab[sp_tab$species == sp_tab[i, 1], "Max_month_EU"] <- months_freq[months_freq$n == max(months_freq$n, na.rm = T), "month"]
+    
+  }}
+
+# save the table
+write.csv(sp_tab, "1_Species_record_summaries/UK/Species_record_Summaries.csv", row.names = F)
 
 
