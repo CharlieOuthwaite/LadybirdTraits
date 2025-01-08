@@ -1,6 +1,6 @@
 # LadybirdTraits
 
-The script in this repository are associated with the production of a traits database for GB ladybirds. 
+The scripts in this repository are associated with the production of a traits database for UK ladybirds. 
 
 The dataset is available via the EIDC here:
 
