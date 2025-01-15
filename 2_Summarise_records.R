@@ -8,8 +8,7 @@
 
 # This script is used to summarise the distribution of species records. 
 # Column in the trait database linked to each section of the script is stated. 
-# Since data from ladybird survey and irecord are formatted differently, 
-# processing of the datasets is required first.
+
 
 # clear environment
 rm(list = ls())
@@ -31,7 +30,6 @@ outdir <- "1_Species_record_summaries/UK/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the data from the NBN
-#survnbn <- read.csv(paste0(datadir, "LadybirdSurvey/records-2024-03-16_LadybirdSurvey.csv")) # this dataset doesn't include data after 2011
 ladybird_survey <- read.csv(paste0(datadir, "LadybirdSurvey/Coccinellid_ladybird_non-ladybird_21-11-2024.csv")) # updated dataset from the BRC. excluding iRecord
 irecord_ladybirds <- read.csv(paste0(datadir, "iRecord_Ladybirds/records-2024-03-16_-_iRecord_Ladybirds.csv")) # in recent years, all verified records are via iRecord
 
@@ -121,14 +119,13 @@ table(irecord_sub$stateProvince.processed)
 #                  England      Isle of Man Northern Ireland         Scotland            Wales 
 #     341           137058             1349              678            10584             5355
 
-
+# n names
 length(unique(irecord_sub$scientificName.processed)) #63
 
 
+
+
 ### Create plot of n records over time from both datasets ###
-
-# limited filtering here, just presenting increase in records over time 
-
 # combine datasets, simple combination only here to plot number of records per year. 
 
 # first, remove those where data could span multiple years
@@ -175,12 +172,11 @@ ggsave(filename = paste0(outdir, "/Fig1_nrecords_year.pdf"),
 ##%######################################################%##
 
 
-# UK ladybird survey data is organised differently to the NBN data from iRecord.
-
+# UK ladybird survey data is organised differently to the irecord data from the NBN.
 
 ## irecord data ##
 
-# Select only those to the species level
+# Select only those records at the species level
 irecord_sub <- irecord_sub[irecord_sub$taxonRank.processed == "species", ] # 147876
 length(unique(irecord_sub$scientificName.processed)) # 52 species
 
@@ -239,45 +235,19 @@ ggplot() +
   geom_sf(data = UK, fill = NA, col = "black") +
   geom_spatvector(data = lb_xy)
 
-# # Just take those points that fall within the country polygons
-### commented out in the end as some were very close to boundary but were dropped. 
-# # convert to terra object
-# UK <- vect(UK)
-# 
-# # extract information for those points from the polygon layer
-# pnt_info <- extract(x = UK, y = lb_xy)
-# 
-# # remove those that have NA within the name field, so outside polygons
-# pnt_info <- pnt_info[!is.na(pnt_info$name_en), ]
-# 
-# # check the points subset
-# ggplot() +
-#   geom_sf(data = UK, fill = NA, col = "black") +
-#   geom_spatvector(data = lb_xy[pnt_info$id.y])
-# 
-# 
-# # subset data to the points within country polygons only
-# lb_dat <- lb_dat[pnt_info$id.y, ] # 256571 rows
-# 
-# # recreate subset of point locations for later summaries
-# lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
-# #plot(lb_xy) # take a look
-# 
-
-
 
 
 ## UK Ladybird Survey data ##
 
 # subset to relevant columns
-surv_sub <- ladybird_survey[ , c(2:6, 9:10, 13, 15, 17)]
+surv_sub <- ladybird_survey[ , c(2:6, 9:10, 13, 15, 17)] # 220647 records
 
 # extract years and months from dates
 surv_sub$year_start <- format(surv_sub$STARTDATE, "%Y")
 surv_sub$year_end <- format(surv_sub$ENDDATE, "%Y")
 
 # summary(surv_sub$year_start == surv_sub$year_end)
-# Mode   FALSE    TRUE    NA's 
+#    Mode   FALSE    TRUE    NA's 
 # logical    4098  215332    1217 
 
 # just select records where date to the nearest day
@@ -306,7 +276,7 @@ latlons <- gr2gps_latlon(gridref = surv_sub$GRIDREF, precision = surv_sub$PRECIS
 # add lat lons into survey data table  
 surv_sub <- cbind(surv_sub, latlons)
 
-# this function doesn't seem to work on those rows where the precision = 2000 or 5000.
+# gr2gps_latlon function doesn't seem to work on those rows where the precision = 2000 or 5000.
 # remove rows where this is the case # 897 records with 2000, 31 eith 5000
 surv_sub <- surv_sub[!surv_sub$PRECISION == 2000 & !surv_sub$PRECISION == 5000, ] # 202283
 
@@ -318,7 +288,6 @@ surv_sub <- surv_sub[!surv_sub$PRECISION == 2000 & !surv_sub$PRECISION == 5000, 
 # download maps
 UKmap <- ne_states(geounit = c("England", "Scotland", "Wales", "Northern Ireland", "Ireland", "Isle of Man"), returnclass = "sv")
 #plot(UKmap)
-
 
 # Convert lat/lons to spatial points to use for data extraction ####
 lb_xy <- vect(surv_sub, geom =c("LONGITUDE", "LATITUDE"))
@@ -334,11 +303,9 @@ table(surv_sub$country)
 # England          Ireland      Isle of Man Northern Ireland         Scotland            Wales 
 #  182824             1158              562             1573             3788             6268 
 
-# remove those from the Isle of Man
-surv_sub <- surv_sub[!surv_sub$country %in% c("Isle of Man"), ] # 201721
 
-# reset lat/lon 
-lb_xy <- vect(surv_sub, geom =c("LONGITUDE", "LATITUDE"))
+# plot(UKmap)
+# plot(lb_xy[surv_sub$country == "Northern Ireland"], add = T)
 
 # subset the NAs for checking
 countNA <- pnt_info[is.na(pnt_info$geonunit), ] # 6110
@@ -346,7 +313,7 @@ countNA <- pnt_info[is.na(pnt_info$geonunit), ] # 6110
 # check the points in the NA subset
 plot(UKmap)
 plot(lb_xy[countNA$id.y], add = T)
-# most seem to be close to a boundary
+# seem to be at the boundaries
 
 ### Try to get information for the NAs
 # set crs for use in nearest function
@@ -367,6 +334,7 @@ surv_sub$neart_cntry_ID[surv_sub$neart_cntry_ID == 0] <- NA
 surv_sub$country[!is.na(surv_sub$neart_cntry_ID)]  <- UKmap$geonunit[surv_sub$neart_cntry_ID[!is.na(surv_sub$neart_cntry_ID)]]
 
 
+
 ### still a few points that it says are in Wales but are actually in England
 
 # plot(UKmap)
@@ -380,32 +348,26 @@ plot(lb_xy_test, add = T)
 
 # reasign them as Wales
 surv_sub[which(surv_sub$country == "Wales" & surv_sub$VC %in% c(4, 5)), "country"] <- "England"
-# 202226
+# 202283
+
+
+# remove those from the Isle of Man
+surv_sub <- surv_sub[!surv_sub$country %in% c("Isle of Man"), ] # 201675
 
 # remove records from Ireland
-surv_sub <- surv_sub[which(!surv_sub$country == "Ireland"), ] # 194882
-
-
-test <- ladybird_survey[which(ladybird_survey$NAME == "Nephus bisignatus" & ladybird_survey$STARTDATE == "09/05/1996"), ]
-ll <- gr2gps_latlon(gridref = test$GRIDREF, precision = test$PRECISION, projection = test$GRIDREF_TYPE)
-
-lb_xy <- vect(ll, geom =c("LONGITUDE", "LATITUDE"))
-plot(UKmap)
-plot(lb_xy, add = T)
-
-
+surv_sub <- surv_sub[which(!surv_sub$country == "Ireland"), ] # 200339
 
 
 
 ## organise species names ##
 
-length(unique(surv_sub$NAME)) #81
+length(unique(surv_sub$NAME)) #80
 
-surv_sub <- surv_sub[which(surv_sub$NAME %in% sp_names_irec | surv_sub$NAME %in% c("Nephus bisignatus")), ] # 153665
+surv_sub <- surv_sub[which(surv_sub$NAME %in% sp_names_irec | surv_sub$NAME %in% c("Nephus bisignatus")), ] # 199830
 length(unique(surv_sub$NAME)) #51
 
 # remove additional species not covered by our database
-surv_sub <- surv_sub[!surv_sub$NAME %in% add_sp, ]
+surv_sub <- surv_sub[!surv_sub$NAME %in% add_sp, ] # 199816
 length(unique(surv_sub$NAME)) #48
 
 #table(surv_sub$NAME)
@@ -431,21 +393,20 @@ names(surv_dat) <- names(irec_dat)
 
 # combine datasets
 lb_dat <- rbind(surv_dat, irec_dat)
-nrow(lb_dat) # 340541 rows
+nrow(lb_dat) # 346012 rows
 
 
 ## final subsetting ##
 
 # Only use records from 1970 onwards
 lb_dat <- lb_dat[lb_dat$year.processed >= 1970, ]
-# 338769 rows
+# 344120 rows
 lb_dat <- lb_dat[lb_dat$year.processed <= 2023, ]
-# 338152 rows
+# 343503 rows
 
 # save the organised dataset
 write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"), row.names = F)
 #lb_dat <- read.csv(paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"))
-
 
 
 ############################################################
@@ -692,7 +653,7 @@ lb_xy_NI <- vect(lb_dat[lb_dat$stateProvince.processed == "Northern Ireland",],
                  geom =c("decimalLongitude.processed", "decimalLatitude.processed"),
                  crs = "+proj=longlat +datum=WGS84")
 
-# extract vice country info from the polygons
+# extract vice county info from the polygons
 lb_dat$vicecounty[!lb_dat$stateProvince.processed == "Northern Ireland"] <- extract(vice_GB, lb_xy_GB)[, 3]
 lb_dat$vicecounty[lb_dat$stateProvince.processed == "Northern Ireland"] <- extract(vice_NI, lb_xy_NI)[, 4]
 
@@ -700,7 +661,7 @@ lb_dat$vicecounty[lb_dat$stateProvince.processed == "Northern Ireland"] <- extra
 # now for each species, count how many unique vice counties
 sp_tab$n_vicecounties <- lb_dat %>%
   group_by(scientificName.processed) %>% # group by species name
-  summarise(n_vicecounties = length(na.omit(unique(vicecounty)))) %>% # summarise the number of unique viecounties
+  summarise(n_vicecounties = length(na.omit(unique(vicecounty)))) %>% # summarise the number of unique vice counties
   pull(n_vicecounties) # select just the one column to add to other table
 
 
