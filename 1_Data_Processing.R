@@ -312,18 +312,20 @@ table(surv_sub$country)
 # remove those from the Isle of Man and Ireland
 surv_sub <- surv_sub[!surv_sub$country %in% c("Isle of Man", "Ireland"), ] # 200563
 
-# reextract locations
+# reextract locations on this new subset
 lb_xy <- vect(surv_sub, geom =c("LONGITUDE", "LATITUDE"))
 
 # plot(UKmap)
 # plot(lb_xy[surv_sub$country == "Northern Ireland"], add = T)
 
 # subset the NAs for checking
-countNA <- surv_sub[is.na(surv_sub$country),] # 6110
+countNA <- surv_sub[is.na(surv_sub$country),] # 6110 where country was not extracted
 
 # check the points in the NA subset
 test <- surv_sub[is.na(surv_sub$country), ]
 test_xy <- vect(test, geom =c("LONGITUDE", "LATITUDE"))
+# plot(UKmap)
+# plot(test_xy, add = T)
 # seem to be at the boundaries
 
 ### Try to get information for the NAs
@@ -367,6 +369,7 @@ surv_sub[which(surv_sub$country == "Wales" & surv_sub$VC %in% c(4, 5)), "country
 
 length(unique(surv_sub$NAME)) #81
 
+# subset to those species of interest from the irecord data, plus nephus bisignatus
 surv_sub <- surv_sub[which(surv_sub$NAME %in% sp_names_irec | surv_sub$NAME %in% c("Nephus bisignatus")), ] # 200053
 length(unique(surv_sub$NAME)) #51
 
