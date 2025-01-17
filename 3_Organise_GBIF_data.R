@@ -22,10 +22,10 @@ datadir <- "0_Data/"
 plotdir <- "2_Organise_GBIF_Data/GBIF_plots/"
 if(!dir.exists(plotdir)) dir.create(plotdir)
 
-# GBIF details #### REMOVE THESE BEFORE SHARING ####
-user <- "charlieouthwaite" # your gbif.org username 
-pwd <- "Th3LostC!ty" # your gbif.org password
-email <- "charlotte.outhwaite.14@ucl.ac.uk" # your email 
+# GBIF details 
+user <- "xxxxx" # your gbif.org username 
+pwd <- "xxxxx" # your gbif.org password
+email <- "xxxxx" # your email 
 
 # read in species names list
 sp_tab <- read.csv(paste0("1_Species_record_summaries/Species_record_Summaries.csv"))
