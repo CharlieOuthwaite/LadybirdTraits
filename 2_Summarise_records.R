@@ -50,6 +50,10 @@ sp_tab <- data.frame(species = sort(unique(lb_dat$scientificName.processed))) # 
 # reset lat/lon 
 lb_xy <- vect(lb_dat, geom =c("decimalLongitude.processed", "decimalLatitude.processed"))
 
+# UKmap <- ne_states(geounit = c("England", "Scotland", "Wales", "Northern Ireland", "Ireland", "Isle of Man"), returnclass = "sv")
+# plot(UKmap)
+# plot(lb_xy, add = T)
+
 ##%######################################################%##
 #                                                          #
 ####           Number of records per species            ####
@@ -222,9 +226,8 @@ BNG <- vect(BNG)
 # reproject so the grid is in the same format as the points (tried the other way around and it didn't work)
 BNG <- project(x = BNG, y = "+proj=longlat +datum=WGS84")
 
-# plot(BNG)
-# plot(UK, add = T)
-# plot(lb_xy, add = T)
+plot(BNG)
+plot(lb_xy, add = T)
 
 # extract the 10km grid refs for the ladybird data
 lb_dat$GridRef10km <- extract(BNG, y = lb_xy)[,2]
@@ -257,13 +260,9 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries.csv"), row.names = F)
 # load in the polygons
 # GB
 vice_GB <- vect(x = paste0(datadir, "vice-counties-master/3-mile/County_3mile_region.shp"))
-# plot(vice_GB)
-# plot(lb_xy_GB, add = T)
 
 # NI
 vice_NI <- vect(x = paste0(datadir, "Irish-Vice-Counties-master/vice_counties/All_Irish_Vice_Counties_irish_grid.shp"))
-# plot(vice_NI)
-# plot(lb_xy_NI, add = T)
 
 # reproject the polygons to match the points
 vice_GB <- project(x = vice_GB, y = "+proj=longlat +datum=WGS84")
@@ -277,7 +276,14 @@ lb_xy_NI <- vect(lb_dat[lb_dat$stateProvince.processed == "Northern Ireland",],
                  geom =c("decimalLongitude.processed", "decimalLatitude.processed"),
                  crs = "+proj=longlat +datum=WGS84")
 
+# take a look
+# plot(vice_GB)
+# plot(lb_xy_GB, add = T)
+# plot(vice_NI)
+# plot(lb_xy_NI, add = T)
+
 # extract vice county info from the polygons
+# this is the slowest step
 lb_dat$vicecounty[!lb_dat$stateProvince.processed == "Northern Ireland"] <- extract(vice_GB, lb_xy_GB)[, 3]
 lb_dat$vicecounty[lb_dat$stateProvince.processed == "Northern Ireland"] <- extract(vice_NI, lb_xy_NI)[, 4]
 
@@ -316,6 +322,8 @@ sp_tab$Max_month <- NA
 for(i in 1:nrow(sp_tab)){
   # i <- 1
   
+  print(i)
+  
   # subset to each species 
   sp_recs <- lb_dat[lb_dat$scientificName.processed == sp_tab[i, 1], ]
   
@@ -352,7 +360,7 @@ for(i in 1:nrow(sp_tab)){
   }else{
   
   # month with the most records
-  sp_tab[sp_tab$species == sp_tab[i, 1], "Max_month"] <- months_freq[months_freq$n == max(months_freq$n, na.rm = T), "month.processed"]
+  sp_tab[sp_tab$species == sp_tab[i, 1], "Max_month"] <- months_freq[months_freq$n == max(months_freq$n, na.rm = T), "month.processed"][1]
   
     # get the first month with the most records
   sp_tab[sp_tab$species == sp_tab[i, 1], "Adult_peak1"] <- grep(TRUE, peaks(months_freq$n, span = 5))[1]
