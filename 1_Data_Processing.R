@@ -346,12 +346,23 @@ surv_sub$neart_cntry_ID[surv_sub$neart_cntry_ID == 0] <- NA
 # extract the country name from the UKmap 
 surv_sub$country[!is.na(surv_sub$neart_cntry_ID)]  <- UKmap$geonunit[surv_sub$neart_cntry_ID[!is.na(surv_sub$neart_cntry_ID)]]
 
+table(surv_sub$country)
+# England          Ireland      Isle of Man Northern Ireland         Scotland            Wales 
+#  187816              178               46             1616             4038             6869 
+
+# remove those from the Isle of Man and Ireland
+surv_sub <- surv_sub[!surv_sub$country %in% c("Isle of Man", "Ireland"), ] # 200339
 
 
 ### still a few points that it says are in Wales but are actually in England
 
+# reextract locations on this new subset
+lb_xy <- vect(surv_sub, geom =c("LONGITUDE", "LATITUDE"))
+
+# take a look
 # plot(UKmap)
 # plot(lb_xy[surv_sub$country == "Wales"], add = T)
+#plot(lb_xy, add = T)
 
 # I identified the 6 points that had somehow been assigned as Wales when they were in England
 test <- surv_sub[which(surv_sub$country == "Wales" & surv_sub$VC %in% c(4, 5)), ]
@@ -361,20 +372,20 @@ plot(lb_xy_test, add = T)
 
 # reasign them as Wales
 surv_sub[which(surv_sub$country == "Wales" & surv_sub$VC %in% c(4, 5)), "country"] <- "England"
-# 200563
+# 200339
 
 
 
 ## organise species names ##
 
-length(unique(surv_sub$NAME)) #81
+length(unique(surv_sub$NAME)) #80
 
 # subset to those species of interest from the irecord data, plus nephus bisignatus
-surv_sub <- surv_sub[which(surv_sub$NAME %in% sp_names_irec | surv_sub$NAME %in% c("Nephus bisignatus")), ] # 200053
+surv_sub <- surv_sub[which(surv_sub$NAME %in% sp_names_irec | surv_sub$NAME %in% c("Nephus bisignatus")), ] # 199830
 length(unique(surv_sub$NAME)) #51
 
 # remove additional species not covered by our database
-surv_sub <- surv_sub[!surv_sub$NAME %in% add_sp, ] # 200039
+surv_sub <- surv_sub[!surv_sub$NAME %in% add_sp, ] # 199816
 length(unique(surv_sub$NAME)) #48
 
 #table(surv_sub$NAME)
@@ -400,16 +411,16 @@ names(surv_dat) <- names(irec_dat)
 
 # combine datasets
 lb_dat <- rbind(surv_dat, irec_dat)
-nrow(lb_dat) # 346235 rows
+nrow(lb_dat) # 346012 rows
 
 
 ## final subsetting ##
 
 # Only use records from 1970 onwards
 lb_dat <- lb_dat[lb_dat$year.processed >= 1970, ]
-# 344333 rows
+# 344120 rows
 lb_dat <- lb_dat[lb_dat$year.processed <= 2023, ]
-# 343716 rows
+# 343503 rows
 
 # save the organised dataset
 write.csv(lb_dat, paste0(outdir, "/Ladybird_occurrences_processed_UK_ALL.csv"), row.names = F)
