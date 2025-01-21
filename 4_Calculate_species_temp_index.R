@@ -39,7 +39,8 @@ sp_tab <- read.csv(paste0(lbdir, "Species_record_Summaries.csv"))
 
 # load in GB ladybird data
 lb_dat <- read.csv(paste0(lbdir, "Ladybird_occurrences_processed_UK_Allvars.csv"))
-# this is the data from Script 0_ where UK data from 1970 have been processed
+# this is the data from Script 2_ where UK data from 1970 have been processed 
+# and additional elements added during summarising
 
 # load in the climate data
 # downloaded from https://www.worldclim.org/data/worldclim21.html#google_vignette
@@ -157,7 +158,7 @@ write.csv(sp_tab, paste0(outdir, "Species_record_Summaries_incSTI_UK.csv"), row.
 # Here we calculated both the mean- and peak-based STIs for each species 
 # using the records from across Europe. 
 
-#sp_tab <- read.csv(paste0(outdir, "Species_record_Summaries_incSTI.csv"))
+#sp_tab <- read.csv(paste0(outdir, "Species_record_Summaries_incSTI_UK.csv"))
 
 # load in the GBIF data for Europe
 load(file = paste0(datadir, "Ladybirds_Europe_GBIF_processed.rdata"))
@@ -190,10 +191,10 @@ sp_tab$Europe_STI_yr <- NA
 # sp <- species[1]
 for (sp in species){
   
-  sp_dat <- d_EU[d_EU$species == sp, ]
+  sp_dat <- as.data.frame(d_EU[d_EU$species == sp, ])
   
   # create point locations 
-  sp_xy <- vect(sp_dat, geom = c("decimalLongitude", "decimalLatitude"))
+  sp_xy <- vect(x = sp_dat, geom = c("decimalLongitude", "decimalLatitude"))
   
   # extract values from the annual mean temperature map
   # take the mean to get the species level STI
@@ -218,7 +219,7 @@ sp_tab$Europe_STI_peak <- NA
 # sp <- species[31]
 for(sp in species){
   
-  sp_dat <- d_EU[d_EU$species == sp, ]
+  sp_dat <- as.data.frame(d_EU[d_EU$species == sp, ])
   
   # create point locations 
   sp_xy <- vect(sp_dat, geom = c("decimalLongitude", "decimalLatitude"))
