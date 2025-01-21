@@ -21,8 +21,7 @@ outdir <- "4_Figures/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the edited trait database
-##### THIS NEEDS TO BE UPDATE WITH THE FINAL VERSION WHEN AVAILABLE #####
-db <- read.csv(paste0(datadir, "Ladybird_Traits_DB_draft_CURRENT.csv"))
+db <- read.csv(paste0(datadir, "Ladybird_Traits_DB_draft_UK_V2_CURRENT.csv"))
 
 # load in the ladybird data - UK
 d_UK <- read.csv("1_Species_record_summaries/UK/Ladybird_occurrences_processed_UK_Allvars.csv")
