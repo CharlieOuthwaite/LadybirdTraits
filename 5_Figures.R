@@ -21,6 +21,8 @@ outdir <- "4_Figures/"
 if(!dir.exists(outdir)) dir.create(outdir)
 
 # load in the edited trait database
+# This is not the version created by the code, since the trends over time
+# have been generated as part of another project. Trends were added to the table of traits.
 db <- read.csv(paste0(datadir, "Ladybird_Traits_DB_draft_UK_V2_CURRENT.csv"))
 
 # load in the ladybird data - UK
