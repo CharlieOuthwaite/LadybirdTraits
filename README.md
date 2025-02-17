@@ -2,7 +2,12 @@
 
 The scripts in this repository are associated with the production of a traits database for UK ladybirds. We bring together information from the literature, the recent field guide by Roy & Brown and occurrence records to collate information on traits, ecological preferences and record-based metrics for the 48 species of ladybird that are currently considered resident in the UK.
 
-The dataset is available via the EIDC here:  XXX to be added XXX
+The dataset is available via the EIDC [here](https://doi.org/10.5285/18cdeee4-38cf-4d15-a141-a99a53e17095).
+
+Please use the citation below if you use the data. 
+
+Outhwaite, C.L.; Cocker, L.; Comont, R.; White, H.J. ; Powney, G.D. ; Turvey, K. ; Roy, H.E.; Brown, P.M.J. (2025). Species traits, ecological preferences and distribution metrics for 48 species of ladybird considered resident in the United Kingdom. NERC EDS Environmental Information Data Centre. https://doi.org/10.5285/18cdeee4-38cf-4d15-a141-a99a53e17095
+
 
 The associated data paper is available here: XXX to be added XXX
 
