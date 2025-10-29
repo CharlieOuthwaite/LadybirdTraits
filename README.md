@@ -9,8 +9,9 @@ Please use the citation below if you use the data.
 Outhwaite, C.L.; Cocker, L.; Comont, R.; White, H.J. ; Powney, G.D. ; Turvey, K. ; Roy, H.E.; Brown, P.M.J. (2025). Species traits, ecological preferences and distribution metrics for 48 species of ladybird considered resident in the United Kingdom. NERC EDS Environmental Information Data Centre. https://doi.org/10.5285/18cdeee4-38cf-4d15-a141-a99a53e17095
 
 
-The associated data paper is available here: XXX to be added XXX
+The associated data paper is available [here] (https://doi.org/10.1038/s41597-025-05985-8).
 
+Outhwaite, C.L., Cocker, L., Comont, R.F. et al. A database of traits for the ladybird species of the United Kingdom. Sci Data 12, 1708 (2025). https://doi.org/10.1038/s41597-025-05985-8
 
 The following scripts are included here:
 
